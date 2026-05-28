@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DHIS2 DataBridge by Wadson Chirwa — Compare · Clean · Visualise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0F172A;--navy-800:#1E293B;--navy-700:#334155;
+  --teal:#0EA5E9;--teal-dark:#0284C7;--teal-light:#E0F2FE;
+  --emerald:#10B981;--emerald-light:#D1FAE5;
+  --amber:#F59E0B;--amber-light:#FEF3C7;
+  --red:#EF4444;--red-light:#FEE2E2;
+  --slate-50:#F8FAFC;--slate-100:#F1F5F9;--slate-200:#E2E8F0;
+  --slate-300:#CBD5E1;--slate-400:#94A3B8;--slate-500:#64748B;
+  --slate-600:#475569;--sidebar-w:228px;--header-h:54px;
+  --radius:8px;--radius-lg:12px;
+}
+html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;font-size:14px;color:var(--navy);background:var(--slate-100);}
+#app{display:flex;flex-direction:column;height:100vh;}
+
+/* HEADER */
+.hdr{height:var(--header-h);background:var(--navy);display:flex;align-items:center;padding:0 20px;gap:14px;z-index:20;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.hdr-logo{display:flex;align-items:center;gap:10px;color:white;font-weight:600;font-size:15px;letter-spacing:-0.01em;}
+.hdr-logo-mark{width:32px;height:32px;background:linear-gradient(135deg,var(--teal),#0369A1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.hdr-divider{width:1px;height:20px;background:rgba(255,255,255,0.1);}
+.hdr-tagline{font-size:11px;color:var(--slate-400);font-weight:400;letter-spacing:0.03em;}
+.hdr-spacer{flex:1;}
+.conn-badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px;transition:all .2s;}
+.conn-badge.on{background:rgba(16,185,129,.15);color:#34D399;border:1px solid rgba(16,185,129,.3);}
+.conn-badge.off{background:rgba(255,255,255,.06);color:var(--slate-500);border:1px solid rgba(255,255,255,.1);}
+.conn-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.hdr-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:var(--slate-300);border-radius:var(--radius);padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;transition:background .15s;}
+.hdr-btn:hover{background:rgba(255,255,255,.14);}
+
+/* LAYOUT */
+.layout{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);background:var(--navy-800);display:flex;flex-direction:column;padding:14px 0;flex-shrink:0;overflow-y:auto;border-right:1px solid rgba(255,255,255,.05);}
+.nav-section{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--slate-600);padding:12px 18px 5px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;color:var(--slate-400);cursor:pointer;transition:all .15s;font-size:13px;font-weight:400;border-left:2px solid transparent;user-select:none;}
+.nav-item:hover{color:#e2e8f0;background:rgba(255,255,255,.04);}
+.nav-item.active{color:white;background:rgba(14,165,233,.12);border-left-color:var(--teal);}
+.nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+.sidebar-footer{margin-top:auto;padding:14px 18px;border-top:1px solid rgba(255,255,255,.05);}
+.sidebar-footer p{font-size:11px;color:var(--slate-600);line-height:1.6;}
+.sidebar-footer a{color:var(--teal);text-decoration:none;}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:28px 32px;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;animation:fadeUp .2s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* TYPOGRAPHY */
+.page-title{font-size:20px;font-weight:600;color:var(--navy);margin-bottom:3px;letter-spacing:-.01em;}
+.page-subtitle{color:var(--slate-500);font-size:13px;margin-bottom:24px;line-height:1.5;}
+
+/* CARDS */
+.card{background:white;border:1px solid var(--slate-200);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;}
+.card-title{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+
+/* METRIC CARDS */
+.metric{background:var(--slate-50);border-radius:var(--radius);padding:14px 16px;border:1px solid var(--slate-200);}
+.metric-label{font-size:11px;color:var(--slate-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.metric-value{font-size:22px;font-weight:600;color:var(--navy);font-family:'IBM Plex Mono',monospace;}
+.metric-sub{font-size:11px;color:var(--slate-400);margin-top:3px;}
+.metric.good .metric-value{color:#059669;}
+.metric.warn .metric-value{color:#D97706;}
+.metric.bad .metric-value{color:#DC2626;}
+
+/* FORMS */
+.form-group{margin-bottom:13px;}
+.form-label{display:block;font-size:12px;font-weight:500;color:var(--slate-600);margin-bottom:5px;}
+.form-input{width:100%;border:1px solid var(--slate-200);border-radius:var(--radius);padding:8px 12px;font-size:13px;font-family:inherit;color:var(--navy);background:white;transition:border-color .15s;outline:none;}
+.form-input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,165,233,.1);}
+select.form-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2364748B' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;appearance:none;}
+textarea.form-input{resize:vertical;min-height:90px;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+
+/* BUTTONS */
+.btn{border:none;border-radius:var(--radius);padding:8px 16px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;line-height:1.4;}
+.btn-primary{background:var(--teal);color:white;}
+.btn-primary:hover{background:var(--teal-dark);}
+.btn-success{background:var(--emerald);color:white;}
+.btn-success:hover{background:#059669;}
+.btn-secondary{background:var(--slate-100);color:var(--slate-700);border:1px solid var(--slate-200);}
+.btn-secondary:hover{background:var(--slate-200);}
+.btn-ghost{background:transparent;color:var(--slate-600);border:1px solid var(--slate-200);}
+.btn-ghost:hover{background:var(--slate-50);}
+.btn-danger{background:var(--red);color:white;}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn-lg{padding:11px 22px;font-size:14px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center;}
+
+/* OPTION CARDS */
+.option-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+.option-card{border:1px solid var(--slate-200);border-radius:var(--radius-lg);padding:22px 18px;cursor:pointer;transition:all .2s;text-align:center;background:white;}
+.option-card:hover{border-color:var(--teal);transform:translateY(-1px);box-shadow:0 4px 16px rgba(14,165,233,.1);}
+.option-card.selected{border-color:var(--teal);border-width:2px;background:var(--teal-light);}
+.oc-icon{font-size:30px;margin-bottom:10px;}
+.oc-title{font-weight:600;font-size:14px;margin-bottom:4px;}
+.oc-desc{font-size:12px;color:var(--slate-500);line-height:1.5;}
+
+/* DATA TABLE */
+.table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--slate-200);}
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--slate-50);padding:10px 14px;text-align:left;font-weight:600;color:var(--slate-600);font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--slate-200);white-space:nowrap;}
+.data-table td{padding:9px 14px;border-bottom:1px solid var(--slate-100);color:var(--navy);}
+.data-table td.mono{font-family:'IBM Plex Mono',monospace;font-size:12px;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:var(--slate-50);}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;}
+.b-ok{background:var(--emerald-light);color:#065F46;}
+.b-miss{background:var(--red-light);color:#991B1B;}
+.b-out{background:var(--amber-light);color:#92400E;}
+.b-info{background:var(--teal-light);color:#0369A1;}
+.b-imp{background:#F3E8FF;color:#6B21A8;}
+.val-null{color:var(--slate-300);font-style:italic;}
+.val-out{color:var(--red);font-weight:500;}
+.val-imp{color:#7C3AED;}
+
+/* QUERY BAR */
+.nl-bar{background:var(--navy-800);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px;}
+.nl-label{color:var(--slate-400);font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+.nl-row{display:flex;gap:10px;margin-bottom:10px;}
+.nl-input{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius);padding:10px 14px;color:white;font-size:13px;font-family:inherit;outline:none;}
+.nl-input:focus{border-color:var(--teal);}
+.nl-input::placeholder{color:var(--slate-600);}
+.pill{display:inline-block;background:rgba(14,165,233,.15);color:#7DD3FC;border-radius:999px;padding:3px 11px;font-size:11px;margin:2px;cursor:pointer;transition:background .15s;}
+.pill:hover{background:rgba(14,165,233,.25);}
+
+/* DIFF */
+.diff-up{color:#059669;font-weight:500;}
+.diff-dn{color:#DC2626;font-weight:500;}
+
+/* PROGRESS */
+.prog-wrap{background:var(--slate-100);border-radius:999px;height:7px;margin-top:5px;overflow:hidden;}
+.prog-bar{height:100%;border-radius:999px;background:var(--emerald);transition:width .6s ease;}
+.prog-bar.warn{background:var(--amber);}
+.prog-bar.bad{background:var(--red);}
+
+/* HINT BOX */
+.hint{display:flex;align-items:flex-start;gap:9px;background:var(--teal-light);border:1px solid #BAE6FD;border-radius:var(--radius);padding:11px 14px;font-size:12.5px;color:#0C4A6E;margin-bottom:14px;line-height:1.5;}
+.hint.warn{background:var(--amber-light);border-color:#FDE68A;color:#78350F;}
+.hint.err{background:var(--red-light);border-color:#FCA5A5;color:#7F1D1D;}
+.hint.ok{background:var(--emerald-light);border-color:#86EFAC;color:#14532D;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.65);z-index:50;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.overlay.open{opacity:1;pointer-events:all;}
+.modal{background:white;border-radius:var(--radius-lg);width:440px;max-width:95vw;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:14px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--navy);color:white;padding:12px 18px;border-radius:var(--radius-lg);font-size:13px;box-shadow:0 8px 28px rgba(0,0,0,.35);display:flex;align-items:center;gap:9px;z-index:100;transform:translateY(80px);opacity:0;transition:all .32s cubic-bezier(.34,1.56,.64,1);max-width:340px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.ok{border-left:3px solid var(--emerald);}
+.toast.err{border-left:3px solid var(--red);}
+
+/* SPINNER */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--slate-400);flex-direction:column;gap:12px;}
+.spin{width:26px;height:26px;border:2px solid var(--slate-200);border-top-color:var(--teal);border-radius:50%;animation:spin .65s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 24px;color:var(--slate-400);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-title{font-size:15px;font-weight:500;color:var(--slate-600);margin-bottom:6px;}
+.empty-desc{font-size:13px;}
+
+/* AI RESPONSE */
+.ai-out{background:var(--navy-800);border-radius:var(--radius-lg);padding:20px 22px;color:#CBD5E1;font-size:13px;line-height:1.75;white-space:pre-wrap;font-family:'IBM Plex Mono',monospace;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--slate-300);border-radius:999px;}
+
+/* UTILS */
+.flex{display:flex;}.flex-c{display:flex;align-items:center;}.flex-b{display:flex;align-items:center;justify-content:space-between;}
+.gap-8{gap:8px;}.gap-12{gap:12px;}
+.mt-4{margin-top:4px;}.mt-8{margin-top:8px;}.mt-16{margin-top:16px;}
+.mb-8{margin-bottom:8px;}.mb-16{margin-bottom:16px;}
+.text-sm{font-size:12px;}.text-muted{color:var(--slate-500);}
+a{color:var(--teal);}
+
+/* WELCOME BANNER */
+.welcome{background:linear-gradient(135deg,var(--navy) 0%,#1e3a5f 100%);border-radius:var(--radius-lg);padding:28px 32px;margin-bottom:20px;color:white;}
+.welcome h2{font-size:22px;font-weight:600;margin-bottom:6px;}
+.welcome p{font-size:13px;color:var(--slate-400);line-height:1.6;max-width:540px;}
+.welcome-steps{display:flex;gap:20px;margin-top:18px;flex-wrap:wrap;}
+.ws{background:rgba(255,255,255,.07);border-radius:var(--radius);padding:12px 16px;flex:1;min-width:120px;}
+.ws-num{font-size:10px;color:var(--teal);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+.ws-text{font-size:12.5px;color:var(--slate-300);}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-logo">
+    <div class="hdr-logo-mark">⚡</div>
+    DHIS2 DataBridge
+  </div>
+  <div class="hdr-divider"></div>
+  <span class="hdr-tagline">Compare · Clean · Visualise · Infer</span>
+  <div class="hdr-divider"></div>
+  <span style="font-size:12px;color:var(--slate-400);font-weight:400;">by <span style="color:#7DD3FC;font-weight:500;">Wadson Chirwa</span>&nbsp;·&nbsp;<a href="mailto:wadsonchirwa2@gmail.com" style="color:var(--slate-500);text-decoration:none;font-size:11px;">wadsonchirwa2@gmail.com</a></span>
+  <div class="hdr-spacer"></div>
+  <span id="connBadge" class="conn-badge off"><span class="conn-dot"></span>Not connected</span>
+  <button class="hdr-btn" onclick="openModal('apiModal')">🔑 AI Key</button>
+  <button class="hdr-btn" onclick="showToast('Connect → Query → Compare / Clean / Dashboard / AI Insights','ok')">? Help</button>
+</header>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="nav-section">Data Source</div>
+  <div class="nav-item active" id="nav-connect" onclick="switchTab('connect')"><span class="nav-icon">🔌</span>Connect</div>
+  <div class="nav-item" id="nav-query" onclick="switchTab('query')"><span class="nav-icon">🔍</span>Query & Explore</div>
+  <div class="nav-item" id="nav-stats" onclick="switchTab('stats')"><span class="nav-icon">📐</span>Descriptive Stats</div>
+  <div class="nav-section">Analysis</div>
+  <div class="nav-item" id="nav-compare" onclick="switchTab('compare')"><span class="nav-icon">⚖️</span>Compare</div>
+  <div class="nav-item" id="nav-clean" onclick="switchTab('clean')"><span class="nav-icon">✨</span>Data Quality</div>
+  <div class="nav-section">Visualise</div>
+  <div class="nav-item" id="nav-dashboard" onclick="switchTab('dashboard')"><span class="nav-icon">📊</span>Dashboard</div>
+  <div class="nav-item" id="nav-insights" onclick="switchTab('insights')"><span class="nav-icon">🤖</span>AI Insights</div>
+  <div class="sidebar-footer">
+    <p>DHIS2 DataBridge v1.0<br>
+    Built by <strong style="color:#94A3B8;">Wadson Chirwa</strong><br>
+    Environmental Health Technician<br>
+    &amp; Deputy IDSR Coordinator<br>
+    Zomba District Health Office<br>
+    <a href="mailto:wadsonchirwa2@gmail.com">wadsonchirwa2@gmail.com</a><br>
+    <a href="https://dhis2.org" target="_blank">dhis2.org docs</a></p>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- ===== CONNECT ===== -->
+<div class="tab-panel active" id="tab-connect">
+  <div class="welcome">
+    <h2>Welcome to DHIS2 DataBridge ⚡</h2>
+    <p>A web-based analytics tool for querying, comparing, cleaning, and drawing insights from DHIS2 health data — built by <strong style="color:#7DD3FC;">Wadson Chirwa</strong>, Environmental Health Technician &amp; Deputy IDSR Coordinator, Zomba District Health Office, Malawi. No installation required.</p>
+    <div class="welcome-steps">
+      <div class="ws"><div class="ws-num">Step 1</div><div class="ws-text">Connect DHIS2 or load demo data</div></div>
+      <div class="ws"><div class="ws-num">Step 2</div><div class="ws-text">Query using natural language or filters</div></div>
+      <div class="ws"><div class="ws-num">Step 3</div><div class="ws-text">Compare datasets side-by-side</div></div>
+      <div class="ws"><div class="ws-num">Step 4</div><div class="ws-text">Clean, chart, and get AI insights</div></div>
+    </div>
+  </div>
+
+  <p class="page-title">Choose Data Source</p>
+  <p class="page-subtitle">Connect to a live DHIS2 server, explore Malawi health demo data, or paste your own dataset</p>
+
+  <div class="option-cards">
+    <div class="option-card" onclick="selectMode('dhis2')" id="oc-dhis2">
+      <div class="oc-icon">🌐</div>
+      <div class="oc-title">DHIS2 Server</div>
+      <div class="oc-desc">Connect to any DHIS2 instance using your server URL and credentials</div>
+    </div>
+    <div class="option-card" onclick="selectMode('demo')" id="oc-demo">
+      <div class="oc-icon">🇲🇼</div>
+      <div class="oc-title">Demo Data</div>
+      <div class="oc-desc">Realistic Malawi health data — 6 districts, 5 indicators, 10 quarters</div>
+    </div>
+    <div class="option-card" onclick="selectMode('paste')" id="oc-paste">
+      <div class="oc-icon">📋</div>
+      <div class="oc-title">Paste / Upload</div>
+      <div class="oc-desc">Paste your own CSV, TSV, or tabular data directly to analyse</div>
+    </div>
+  </div>
+
+  <!-- DHIS2 Panel -->
+  <div id="pn-dhis2" style="display:none" class="card">
+    <p class="card-title">🌐 DHIS2 Connection</p>
+    <div class="hint">💡 Try the public demo: <strong>https://play.dhis2.org/40.2.2</strong> — username <strong>admin</strong>, password <strong>district</strong></div>
+    <div class="grid-2">
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Server URL</label>
+        <input type="url" class="form-input" id="d2url" placeholder="https://your-dhis2.org" value="https://play.dhis2.org/40.2.2">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-input" id="d2user" placeholder="admin" value="admin">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="d2pass" placeholder="district" value="district">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="connectDHIS2()">🔌 Connect</button>
+      <button class="btn btn-ghost btn-sm" onclick="selectMode('demo')">Use demo instead</button>
+    </div>
+    <div id="d2result" style="margin-top:12px"></div>
+  </div>
+
+  <!-- Demo Panel -->
+  <div id="pn-demo" style="display:none" class="card">
+    <p class="card-title">🇲🇼 Malawi Health Demo Dataset</p>
+    <p class="text-muted text-sm mb-16">Realistic simulated district health data with seasonal patterns, trends, and built-in quality issues for demonstration purposes.</p>
+    <div class="grid-3" style="margin-bottom:16px">
+      <div class="metric"><div class="metric-label">Districts</div><div class="metric-value">6</div><div class="metric-sub">Zomba · Blantyre · Lilongwe + 3</div></div>
+      <div class="metric"><div class="metric-label">Indicators</div><div class="metric-value">5</div><div class="metric-sub">Malaria · HIV · ANC · Immunisation · Deliveries</div></div>
+      <div class="metric"><div class="metric-label">Periods</div><div class="metric-value">10</div><div class="metric-sub">Quarterly: 2022Q1 – 2024Q2</div></div>
+    </div>
+    <div class="hint warn">⚠️ This dataset includes intentional quality issues (missing values, outliers) so you can explore the Data Quality tab.</div>
+    <div class="btn-row">
+      <button class="btn btn-success btn-lg" onclick="loadDemo()">▶ Load Demo Data</button>
+    </div>
+  </div>
+
+  <!-- Paste Panel -->
+  <div id="pn-paste" style="display:none" class="card">
+    <p class="card-title">📋 Paste Your Data</p>
+    <div class="hint">Supported formats: CSV, TSV, or semicolon-delimited. First row should be headers. Expected columns: <strong>district / org_unit, period, indicator, value</strong> (column order flexible).</div>
+    <div class="form-group">
+      <label class="form-label">Paste data here</label>
+      <textarea class="form-input" id="pasteArea" rows="10" placeholder="district,period,indicator,value&#10;Zomba,2023Q1,Malaria Cases,4521&#10;Blantyre,2023Q1,Malaria Cases,3812&#10;..."></textarea>
+    </div>
+    <div class="flex-c gap-12">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Delimiter</label>
+        <select class="form-input" id="pasteDel" style="width:auto">
+          <option value="auto">Auto-detect</option>
+          <option value=",">Comma</option>
+          <option value="	">Tab</option>
+          <option value=";">Semicolon</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="parsePaste()">Parse & Load</button>
+      <button class="btn btn-ghost btn-sm" onclick="fillSample()">Fill sample CSV</button>
+    </div>
+    <div id="pasteResult" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- ===== QUERY ===== -->
+<div class="tab-panel" id="tab-query">
+  <p class="page-title">Query & Explore</p>
+  <p class="page-subtitle">Use natural language or manual filters to query your data. Hold Ctrl/Cmd to multi-select.</p>
+
+  <div class="nl-bar">
+    <div class="nl-label">💬 Natural language query (requires AI key)</div>
+    <div class="nl-row">
+      <input type="text" class="nl-input" id="nlInput" placeholder="e.g. Show malaria cases in Zomba and Blantyre for all of 2023…" onkeydown="if(event.key==='Enter')runNL()">
+      <button class="btn btn-primary" onclick="runNL()">Ask ↗</button>
+    </div>
+    <div>
+      <span class="pill" onclick="fillNL('Malaria cases in all districts for 2023')">Malaria 2023</span>
+      <span class="pill" onclick="fillNL('Compare ANC visits between Zomba and Blantyre')">ANC comparison</span>
+      <span class="pill" onclick="fillNL('HIV tests trend across all periods')">HIV trend</span>
+      <span class="pill" onclick="fillNL('All indicators for Zomba district')">Zomba full</span>
+      <span class="pill" onclick="fillNL('Immunisation coverage across all districts 2024')">Immunisation 2024</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="card-title">Manual Query Builder</p>
+    <div class="grid-3">
+      <div class="form-group">
+        <label class="form-label">Indicators</label>
+        <select class="form-input" id="qInd" multiple size="6">
+          <option value="Malaria Cases" selected>Malaria Cases</option>
+          <option value="HIV Tests">HIV Tests Conducted</option>
+          <option value="ANC 1st Visits">ANC 1st Visit</option>
+          <option value="Immunisations">Fully Immunised Children</option>
+          <option value="Deliveries">Deliveries in Facility</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Districts</label>
+        <select class="form-input" id="qDist" multiple size="6">
+          <option value="Zomba" selected>Zomba</option>
+          <option value="Blantyre" selected>Blantyre</option>
+          <option value="Lilongwe">Lilongwe</option>
+          <option value="Mzuzu">Mzuzu</option>
+          <option value="Kasungu">Kasungu</option>
+          <option value="Mangochi">Mangochi</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Periods</label>
+        <select class="form-input" id="qPer" multiple size="6">
+          <option value="2022Q1">2022 Q1</option>
+          <option value="2022Q2">2022 Q2</option>
+          <option value="2022Q3">2022 Q3</option>
+          <option value="2022Q4">2022 Q4</option>
+          <option value="2023Q1" selected>2023 Q1</option>
+          <option value="2023Q2" selected>2023 Q2</option>
+          <option value="2023Q3" selected>2023 Q3</option>
+          <option value="2023Q4" selected>2023 Q4</option>
+          <option value="2024Q1">2024 Q1</option>
+          <option value="2024Q2">2024 Q2</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="runQuery()">▶ Run Query</button>
+      <button class="btn btn-ghost btn-sm" onclick="selAll()">Select all</button>
+      <button class="btn btn-ghost btn-sm" onclick="downloadCSV()">⬇ Export CSV</button>
+      <span id="qCount" class="text-sm text-muted" style="margin-left:auto;line-height:32px;"></span>
+    </div>
+  </div>
+  <div id="queryResults"></div>
+</div>
+
+<!-- ===== DESCRIPTIVE STATS ===== -->
+<div class="tab-panel" id="tab-stats">
+  <p class="page-title">Descriptive Statistics</p>
+  <p class="page-subtitle">Full statistical summary of your dataset — broken down by indicator and district</p>
+  <div class="card" style="margin-bottom:16px">
+    <div class="flex-c gap-12" style="flex-wrap:wrap">
+      <div class="form-group" style="margin:0;flex:1;min-width:180px">
+        <label class="form-label">Group by</label>
+        <select class="form-input" id="statGroup" onchange="renderStats()">
+          <option value="indicator">Indicator</option>
+          <option value="district">District</option>
+          <option value="both">Indicator × District</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;flex:1;min-width:180px">
+        <label class="form-label">Filter indicator</label>
+        <select class="form-input" id="statInd" onchange="renderStats()">
+          <option value="all">All indicators</option>
+          <option value="Malaria Cases">Malaria Cases</option>
+          <option value="HIV Tests">HIV Tests</option>
+          <option value="ANC 1st Visits">ANC 1st Visits</option>
+          <option value="Immunisations">Immunisations</option>
+          <option value="Deliveries">Deliveries</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;flex:1;min-width:180px">
+        <label class="form-label">Filter district</label>
+        <select class="form-input" id="statDist" onchange="renderStats()">
+          <option value="all">All districts</option>
+          <option value="Zomba">Zomba</option>
+          <option value="Blantyre">Blantyre</option>
+          <option value="Lilongwe">Lilongwe</option>
+          <option value="Mzuzu">Mzuzu</option>
+          <option value="Kasungu">Kasungu</option>
+          <option value="Mangochi">Mangochi</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;align-self:flex-end">
+        <button class="btn btn-ghost" onclick="downloadStatCSV()">⬇ Export stats CSV</button>
+      </div>
+    </div>
+  </div>
+  <div id="statsOut"></div>
+</div>
+
+<!-- ===== COMPARE ===== -->
+<div class="tab-panel" id="tab-compare">
+  <p class="page-title">Compare Datasets</p>
+  <p class="page-subtitle">Side-by-side comparison of two indicators across districts and periods</p>
+  <div class="card">
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label">Indicator A</label>
+        <select class="form-input" id="cmpA" onchange="renderCompare()">
+          <option value="Malaria Cases">Malaria Cases</option>
+          <option value="HIV Tests">HIV Tests</option>
+          <option value="ANC 1st Visits">ANC 1st Visits</option>
+          <option value="Immunisations">Immunisations</option>
+          <option value="Deliveries">Deliveries</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Indicator B</label>
+        <select class="form-input" id="cmpB" onchange="renderCompare()">
+          <option value="Malaria Cases">Malaria Cases</option>
+          <option value="HIV Tests" selected>HIV Tests</option>
+          <option value="ANC 1st Visits">ANC 1st Visits</option>
+          <option value="Immunisations">Immunisations</option>
+          <option value="Deliveries">Deliveries</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Period filter</label>
+        <select class="form-input" id="cmpPer" onchange="renderCompare()">
+          <option value="all">All periods (summed)</option>
+          <option value="2022Q1">2022 Q1</option><option value="2022Q2">2022 Q2</option>
+          <option value="2022Q3">2022 Q3</option><option value="2022Q4">2022 Q4</option>
+          <option value="2023Q1">2023 Q1</option><option value="2023Q2">2023 Q2</option>
+          <option value="2023Q3">2023 Q3</option><option value="2023Q4">2023 Q4</option>
+          <option value="2024Q1">2024 Q1</option><option value="2024Q2">2024 Q2</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">View mode</label>
+        <select class="form-input" id="cmpView" onchange="renderCompare()">
+          <option value="both">Table + Chart</option>
+          <option value="table">Table only</option>
+          <option value="chart">Chart only</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div id="cmpOut"></div>
+</div>
+
+<!-- ===== CLEAN ===== -->
+<div class="tab-panel" id="tab-clean">
+  <p class="page-title">Data Quality</p>
+  <p class="page-subtitle">Assess completeness, detect outliers, and apply automated cleaning actions</p>
+  <div id="cleanOut"></div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div class="tab-panel" id="tab-dashboard">
+  <p class="page-title">Dashboard</p>
+  <p class="page-subtitle">Auto-generated visualisations from your data — switch indicator or chart type to update</p>
+  <div class="card">
+    <div class="flex-c gap-12" style="flex-wrap:wrap;">
+      <div class="form-group" style="margin:0;flex:1;min-width:160px;">
+        <label class="form-label">Indicator</label>
+        <select class="form-input" id="dashInd" onchange="renderDashboard()">
+          <option value="Malaria Cases">Malaria Cases</option>
+          <option value="HIV Tests">HIV Tests</option>
+          <option value="ANC 1st Visits">ANC 1st Visits</option>
+          <option value="Immunisations">Immunisations</option>
+          <option value="Deliveries">Deliveries</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;flex:1;min-width:160px;">
+        <label class="form-label">Chart type</label>
+        <select class="form-input" id="dashType" onchange="renderDashboard()">
+          <option value="bar">Bar — by district</option>
+          <option value="line">Line — trends over time</option>
+          <option value="doughnut">Donut — district share</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">&nbsp;</label>
+        <button class="btn btn-ghost" onclick="renderDashboard()">↺ Refresh</button>
+      </div>
+    </div>
+  </div>
+  <div id="dashOut"></div>
+</div>
+
+<!-- ===== INSIGHTS ===== -->
+<div class="tab-panel" id="tab-insights">
+  <p class="page-title">AI Insights</p>
+  <p class="page-subtitle">Ask Claude to analyse your health data, identify patterns, and generate recommendations</p>
+  <div id="insightsOut"></div>
+</div>
+
+</main>
+</div>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="overlay" id="apiModal" onclick="if(event.target===this)closeModal('apiModal')">
+  <div class="modal">
+    <p class="modal-title">🔑 Anthropic API Key</p>
+    <p class="text-sm text-muted mb-16">Required for AI Insights and natural language queries. Get yours free at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>. Your key is stored only in your browser.</p>
+    <div class="form-group">
+      <label class="form-label">API Key</label>
+      <input type="password" class="form-input" id="apiKeyIn" placeholder="sk-ant-api03-…">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveKey()">Save Key</button>
+      <button class="btn btn-ghost" onclick="closeModal('apiModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────
+const S = {
+  connected: false,
+  mode: null,
+  rows: [],        // all loaded rows
+  filtered: [],    // current query result
+  apiKey: localStorage.getItem('anthropic_key') || '',
+  charts: {},
+};
+
+// ── SEEDED RNG ─────────────────────────────────────────────────
+function mkRng(seed) {
+  let s = seed;
+  return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+}
+
+// ── DEMO DATA GENERATOR ────────────────────────────────────────
+function generateDemo() {
+  const rng = mkRng(137);
+  const districts = ['Zomba','Blantyre','Lilongwe','Mzuzu','Kasungu','Mangochi'];
+  const indicators = ['Malaria Cases','HIV Tests','ANC 1st Visits','Immunisations','Deliveries'];
+  const periods    = ['2022Q1','2022Q2','2022Q3','2022Q4','2023Q1','2023Q2','2023Q3','2023Q4','2024Q1','2024Q2'];
+
+  const base = {
+    Zomba:    {'Malaria Cases':4500,'HIV Tests':1200,'ANC 1st Visits':2800,'Immunisations':2400,'Deliveries':1800},
+    Blantyre: {'Malaria Cases':3800,'HIV Tests':2100,'ANC 1st Visits':3200,'Immunisations':2900,'Deliveries':2400},
+    Lilongwe: {'Malaria Cases':6200,'HIV Tests':3400,'ANC 1st Visits':5100,'Immunisations':4600,'Deliveries':3800},
+    Mzuzu:    {'Malaria Cases':1200,'HIV Tests':900, 'ANC 1st Visits':1400,'Immunisations':1200,'Deliveries':900 },
+    Kasungu:  {'Malaria Cases':2800,'HIV Tests':700, 'ANC 1st Visits':1900,'Immunisations':1700,'Deliveries':1200},
+    Mangochi: {'Malaria Cases':7100,'HIV Tests':1100,'ANC 1st Visits':2100,'Immunisations':1800,'Deliveries':1500},
+  };
+  const seasonal = {'Malaria Cases':[1.30,0.75,0.65,1.18]};
+
+  const rows = [];
+  for (const d of districts) for (const p of periods) for (const ind of indicators) {
+    const q  = parseInt(p.slice(-1)) - 1;
+    const yr = parseInt(p.slice(0,4));
+    const idx = (yr-2022)*4 + q;
+    const sf  = (seasonal[ind] || [1,1,1,1])[q];
+    const trend = 1 - idx * 0.007;
+    let val = Math.round(base[d][ind] * sf * trend * (0.82 + rng()*0.36));
+    let quality = 'ok';
+    if (rng() < 0.055) { val = null; quality = 'missing'; }
+    else if (rng() < 0.028) { val = Math.round(val * (3.2 + rng()*1.8)); quality = 'outlier'; }
+    rows.push({district:d, period:p, indicator:ind, value:val, quality});
+  }
+  return rows;
+}
+
+// ── CONNECTION ─────────────────────────────────────────────────
+function selectMode(m) {
+  ['dhis2','demo','paste'].forEach(x => {
+    document.getElementById('oc-'+x).classList.toggle('selected', x===m);
+    document.getElementById('pn-'+x).style.display = x===m ? 'block' : 'none';
+  });
+}
+
+async function connectDHIS2() {
+  const url  = document.getElementById('d2url').value.trim();
+  const user = document.getElementById('d2user').value.trim();
+  const pass = document.getElementById('d2pass').value.trim();
+  const el   = document.getElementById('d2result');
+  if (!url) { showToast('Enter server URL','err'); return; }
+  el.innerHTML = '<div class="loading"><div class="spin"></div><span>Testing connection…</span></div>';
+  try {
+    const res = await fetch(`${url}/api/me.json`, {
+      headers: { 'Authorization': 'Basic ' + btoa(user+':'+pass) }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const me = await res.json();
+    // Load some analytics
+    el.innerHTML = `<div class="hint ok">✅ Connected as <strong>${me.displayName||user}</strong>. Loading analytics data…</div>`;
+    await loadDHIS2Data(url, btoa(user+':'+pass));
+    S.connected = true; S.mode = 'dhis2';
+    updateBadge(true, 'DHIS2: '+url.replace('https://','').split('/')[0]);
+    showToast('Connected to DHIS2','ok');
+    setTimeout(() => { switchTab('query'); runQuery(); }, 500);
+  } catch(e) {
+    el.innerHTML = `<div class="hint err">❌ Failed: ${e.message}. <a href="#" onclick="selectMode('demo');return false">Use demo instead?</a></div>`;
+  }
+}
+
+async function loadDHIS2Data(url, creds) {
+  // Try to pull real analytics; fall back to demo on any error
+  try {
+    const r = await fetch(`${url}/api/analytics.json?dimension=dx:fbfJHSPpUQD;cYeuwXTCPkU&dimension=ou:LEVEL-2&dimension=pe:LAST_8_QUARTERS`, {
+      headers: { 'Authorization': 'Basic ' + creds }
+    });
+    if (!r.ok) throw new Error('analytics fetch failed');
+    const data = await r.json();
+    const dxMap = Object.fromEntries((data.metaData?.items||{}) ? Object.entries(data.metaData.items).map(([k,v])=>[k,v.name]) : []);
+    S.rows = (data.rows||[]).map(row => ({
+      district:  dxMap[row[1]] || row[1],
+      period:    row[2],
+      indicator: dxMap[row[0]] || row[0],
+      value:     parseFloat(row[3]) || null,
+      quality:   'ok'
+    }));
+    if (S.rows.length === 0) throw new Error('empty');
+  } catch {
+    S.rows = generateDemo();
+    showToast('Using simulated data — DHIS2 returned no rows','err');
+  }
+}
+
+function loadDemo() {
+  S.rows = generateDemo();
+  S.filtered = [...S.rows];
+  S.connected = true; S.mode = 'demo';
+  updateBadge(true, '🇲🇼 Demo: Malawi Health Data');
+  showToast('Demo data loaded — ' + S.rows.length + ' records ready','ok');
+  setTimeout(() => { switchTab('query'); runQuery(); }, 400);
+}
+
+function parsePaste() {
+  const raw = document.getElementById('pasteArea').value.trim();
+  const delOpt = document.getElementById('pasteDel').value;
+  const el  = document.getElementById('pasteResult');
+  if (!raw) { el.innerHTML='<p class="text-sm" style="color:var(--red)">Nothing pasted</p>'; return; }
+
+  const lines = raw.split('\n').filter(l => l.trim());
+  let delim = delOpt === 'auto' ? (raw.includes('\t') ? '\t' : raw.includes(';') ? ';' : ',') : delOpt;
+  const hdr  = lines[0].split(delim).map(h => h.trim().replace(/^"|"$/g,'').toLowerCase());
+
+  const idx = {};
+  hdr.forEach((h,i) => {
+    if (!idx.district && /district|org|unit|location|facility/.test(h)) idx.district = i;
+    else if (!idx.period && /period|quarter|date|month|year/.test(h)) idx.period = i;
+    else if (!idx.indicator && /indicator|metric|element|variable/.test(h)) idx.indicator = i;
+    else if (!idx.value && /value|count|num|total|result/.test(h)) idx.value = i;
+  });
+  if (idx.value === undefined) { idx.district=0; idx.period=1; idx.indicator=2; idx.value=3; }
+
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const c = lines[i].split(delim).map(x => x.trim().replace(/^"|"$/g,''));
+    const v = parseFloat(c[idx.value]);
+    rows.push({
+      district:  c[idx.district]  || 'Unknown',
+      period:    c[idx.period]    || 'Unknown',
+      indicator: c[idx.indicator] || 'Metric',
+      value:     isNaN(v) ? null : v,
+      quality:   isNaN(v) ? 'missing' : 'ok',
+    });
+  }
+
+  S.rows = rows; S.filtered = [...rows];
+  S.connected = true; S.mode = 'paste';
+  updateBadge(true, 'Pasted — ' + rows.length + ' records');
+  el.innerHTML = `<div class="hint ok">✅ Parsed <strong>${rows.length}</strong> records from ${new Set(rows.map(r=>r.district)).size} org units</div>`;
+  showToast('Data parsed','ok');
+  setTimeout(() => switchTab('query'), 700);
+}
+
+function fillSample() {
+  document.getElementById('pasteArea').value =
+`district,period,indicator,value
+Zomba,2023Q1,Malaria Cases,4521
+Blantyre,2023Q1,Malaria Cases,3812
+Lilongwe,2023Q1,Malaria Cases,6104
+Mzuzu,2023Q1,Malaria Cases,1187
+Zomba,2023Q2,Malaria Cases,2987
+Blantyre,2023Q2,Malaria Cases,2441
+Lilongwe,2023Q2,Malaria Cases,4823
+Zomba,2023Q1,ANC 1st Visits,2734
+Blantyre,2023Q1,ANC 1st Visits,3021
+Lilongwe,2023Q1,ANC 1st Visits,4987
+Zomba,2023Q1,HIV Tests,1143
+Blantyre,2023Q1,HIV Tests,1987
+Zomba,2023Q1,Deliveries,1755
+Blantyre,2023Q1,Deliveries,2340`;
+}
+
+// ── QUERY ──────────────────────────────────────────────────────
+function getOpts(id) { return Array.from(document.getElementById(id).selectedOptions).map(o => o.value); }
+function selAll() {
+  ['qInd','qDist','qPer'].forEach(id => Array.from(document.getElementById(id).options).forEach(o => o.selected=true));
+}
+
+function runQuery() {
+  if (!S.connected) { showToast('Connect a data source first','err'); switchTab('connect'); return; }
+  const inds  = getOpts('qInd');
+  const dists = getOpts('qDist');
+  const pers  = getOpts('qPer');
+  S.filtered = S.rows.filter(r =>
+    (!inds.length  || inds.includes(r.indicator)) &&
+    (!dists.length || dists.includes(r.district)) &&
+    (!pers.length  || pers.includes(r.period))
+  );
+  document.getElementById('qCount').textContent = S.filtered.length + ' records';
+  renderTable(S.filtered, 'queryResults');
+}
+
+async function runNL() {
+  const q = document.getElementById('nlInput').value.trim();
+  if (!q || !S.connected) { if (!S.connected) showToast('Load data first','err'); return; }
+  document.getElementById('queryResults').innerHTML = '<div class="loading"><div class="spin"></div><span>Interpreting query…</span></div>';
+
+  let parsed;
+  if (S.apiKey) {
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body: JSON.stringify({
+          model:'claude-sonnet-4-20250514', max_tokens:400,
+          system:`Parse the user's query into DHIS2 filter params. Return ONLY raw JSON (no markdown) with keys:
+indicators: array from ["Malaria Cases","HIV Tests","ANC 1st Visits","Immunisations","Deliveries"]
+districts: array from ["Zomba","Blantyre","Lilongwe","Mzuzu","Kasungu","Mangochi"]
+periods: array from ["2022Q1","2022Q2","2022Q3","2022Q4","2023Q1","2023Q2","2023Q3","2023Q4","2024Q1","2024Q2"]
+Empty array = select all. Match flexibly (e.g. "malaria" → "Malaria Cases").`,
+          messages:[{role:'user',content:q}]
+        })
+      });
+      const d = await resp.json();
+      parsed = JSON.parse(d.content[0].text);
+    } catch { parsed = fallbackParse(q); }
+  } else { parsed = fallbackParse(q); }
+  applyParsed(parsed);
+}
+
+function fallbackParse(q) {
+  const ql = q.toLowerCase();
+  const indicators=[], districts=[], periods=[];
+  if (/malaria/.test(ql)) indicators.push('Malaria Cases');
+  if (/hiv/.test(ql))     indicators.push('HIV Tests');
+  if (/anc/.test(ql))     indicators.push('ANC 1st Visits');
+  if (/immun/.test(ql))   indicators.push('Immunisations');
+  if (/deliver/.test(ql)) indicators.push('Deliveries');
+  ['Zomba','Blantyre','Lilongwe','Mzuzu','Kasungu','Mangochi'].forEach(d => { if (ql.includes(d.toLowerCase())) districts.push(d); });
+  ['2022','2023','2024'].forEach(yr => { if (ql.includes(yr)) ['Q1','Q2','Q3','Q4'].forEach(q => periods.push(yr+q)); });
+  return {indicators, districts, periods};
+}
+
+function applyParsed(p) {
+  const setOpts = (id, vals) => Array.from(document.getElementById(id).options).forEach(o => o.selected = !vals.length || vals.includes(o.value));
+  setOpts('qInd',  p.indicators||[]);
+  setOpts('qDist', p.districts||[]);
+  setOpts('qPer',  p.periods||[]);
+  runQuery();
+}
+
+function fillNL(t) { document.getElementById('nlInput').value = t; runNL(); }
+
+function renderTable(rows, containerId) {
+  const el = document.getElementById(containerId);
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p class="empty-title">No matching records</p><p class="empty-desc">Adjust your filters</p></div>';
+    return;
+  }
+  const preview = rows.slice(0,300);
+  el.innerHTML = `
+    <div class="card">
+      <div class="flex-b mb-8">
+        <p class="card-title" style="margin:0">Results <span class="badge b-info">${rows.length}</span></p>
+        <button class="btn btn-ghost btn-sm" onclick="downloadCSV()">⬇ Export CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>District</th><th>Period</th><th>Indicator</th><th>Value</th><th>Quality</th></tr></thead>
+          <tbody>
+            ${preview.map(r => `<tr>
+              <td>${r.district}</td>
+              <td class="mono">${r.period}</td>
+              <td>${r.indicator}</td>
+              <td class="mono ${r.quality==='outlier'?'val-out':r.value===null?'val-null':r.quality==='imputed'?'val-imp':''}">
+                ${r.value===null?'NULL':r.value.toLocaleString()}</td>
+              <td>${qualBadge(r.quality)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      ${rows.length>300?`<p class="text-sm text-muted mt-8">Showing 300 of ${rows.length} — export for full dataset.</p>`:''}
+    </div>`;
+}
+
+function qualBadge(q) {
+  return q==='ok'?'<span class="badge b-ok">OK</span>':
+         q==='missing'?'<span class="badge b-miss">Missing</span>':
+         q==='outlier'?'<span class="badge b-out">Outlier</span>':
+         q==='imputed'?'<span class="badge b-imp">Imputed</span>':
+         q==='capped'?'<span class="badge b-out">Capped</span>':
+         '<span class="badge b-info">'+q+'</span>';
+}
+
+// ── DESCRIPTIVE STATISTICS ─────────────────────────────────────
+function calcStats(values) {
+  const vs = values.filter(v => v !== null && !isNaN(v)).map(Number);
+  if (!vs.length) return null;
+  const n    = vs.length;
+  const sum  = vs.reduce((a,b) => a+b, 0);
+  const mean = sum / n;
+  const sorted = [...vs].sort((a,b) => a-b);
+  const min  = sorted[0];
+  const max  = sorted[n-1];
+  const range = max - min;
+
+  // Median
+  const mid = Math.floor(n/2);
+  const median = n%2 ? sorted[mid] : (sorted[mid-1]+sorted[mid])/2;
+
+  // Q1, Q3, IQR
+  const q1 = sorted[Math.floor(n*0.25)];
+  const q3 = sorted[Math.floor(n*0.75)];
+  const iqr = q3 - q1;
+
+  // Variance & SD
+  const variance = vs.reduce((s,v) => s + Math.pow(v-mean,2), 0) / n;
+  const sd = Math.sqrt(variance);
+
+  // CV (coefficient of variation)
+  const cv = mean !== 0 ? (sd/mean)*100 : 0;
+
+  // Mode (most frequent value, rounded to nearest integer for continuous data)
+  const freq = {};
+  vs.forEach(v => { const k=Math.round(v); freq[k]=(freq[k]||0)+1; });
+  const modeKey = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+  const mode = modeKey ? Number(modeKey[0]) : mean;
+
+  // Skewness (Pearson's moment)
+  const skew = sd > 0 ? (vs.reduce((s,v) => s + Math.pow((v-mean)/sd,3),0) / n) : 0;
+
+  // Kurtosis (excess)
+  const kurt = sd > 0 ? (vs.reduce((s,v) => s + Math.pow((v-mean)/sd,4),0) / n) - 3 : 0;
+
+  return { n, sum, mean, median, mode, min, max, range, q1, q3, iqr, sd, variance, cv, skew, kurt };
+}
+
+function fmt(v, dec=1) {
+  if (v === null || v === undefined) return '—';
+  if (Math.abs(v) >= 1000) return Math.round(v).toLocaleString();
+  return parseFloat(v.toFixed(dec)).toLocaleString();
+}
+
+function skewLabel(s) {
+  if (Math.abs(s) < 0.5) return '<span class="badge b-ok">Symmetric</span>';
+  if (s > 0) return '<span class="badge b-out">Right-skewed</span>';
+  return '<span class="badge b-info">Left-skewed</span>';
+}
+
+function sparkBar(val, max, color='#0EA5E9') {
+  const pct = max > 0 ? Math.min(100, (val/max)*100) : 0;
+  return `<div style="display:flex;align-items:center;gap:8px">
+    <div style="flex:1;background:#f1f5f9;border-radius:999px;height:6px;overflow:hidden">
+      <div style="width:${pct.toFixed(1)}%;height:100%;background:${color};border-radius:999px"></div>
+    </div>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;min-width:64px;text-align:right">${Math.round(val).toLocaleString()}</span>
+  </div>`;
+}
+
+let _lastStatRows = [];
+
+function renderStats() {
+  const el = document.getElementById('statsOut');
+  if (!S.connected || !S.rows.length) { el.innerHTML = noData(); return; }
+
+  const group   = document.getElementById('statGroup').value;
+  const indF    = document.getElementById('statInd').value;
+  const distF   = document.getElementById('statDist').value;
+
+  let rows = S.rows.filter(r => r.value !== null);
+  if (indF  !== 'all') rows = rows.filter(r => r.indicator === indF);
+  if (distF !== 'all') rows = rows.filter(r => r.district  === distF);
+
+  // Build groups
+  let groups = [];
+  if (group === 'indicator') {
+    const inds = [...new Set(rows.map(r=>r.indicator))].sort();
+    groups = inds.map(ind => ({ label: ind, sublabel: '', values: rows.filter(r=>r.indicator===ind).map(r=>r.value) }));
+  } else if (group === 'district') {
+    const dists = [...new Set(rows.map(r=>r.district))].sort();
+    groups = dists.map(d => ({ label: d, sublabel: '', values: rows.filter(r=>r.district===d).map(r=>r.value) }));
+  } else {
+    const inds  = [...new Set(rows.map(r=>r.indicator))].sort();
+    const dists = [...new Set(rows.map(r=>r.district))].sort();
+    for (const ind of inds) for (const d of dists) {
+      const vs = rows.filter(r=>r.indicator===ind&&r.district===d).map(r=>r.value);
+      if (vs.length) groups.push({ label: ind, sublabel: d, values: vs });
+    }
+  }
+
+  const computed = groups.map(g => ({ ...g, stats: calcStats(g.values) })).filter(g => g.stats);
+  _lastStatRows = computed;
+
+  // Overall dataset stats (all filtered values)
+  const overall = calcStats(rows.map(r=>r.value));
+  const maxMean = Math.max(...computed.map(g=>g.stats.mean));
+
+  let html = '';
+
+  // Summary cards
+  if (overall) {
+    html += `<div class="grid-4" style="margin-bottom:16px">
+      <div class="metric"><div class="metric-label">Total Observations</div><div class="metric-value">${overall.n.toLocaleString()}</div></div>
+      <div class="metric"><div class="metric-label">Overall Mean</div><div class="metric-value">${fmt(overall.mean)}</div><div class="metric-sub">SD ± ${fmt(overall.sd)}</div></div>
+      <div class="metric"><div class="metric-label">Overall Median</div><div class="metric-value">${fmt(overall.median)}</div><div class="metric-sub">IQR: ${fmt(overall.q1)} – ${fmt(overall.q3)}</div></div>
+      <div class="metric"><div class="metric-label">Overall CV</div><div class="metric-value">${fmt(overall.cv)}%</div><div class="metric-sub">${overall.cv<15?'Low':'overall.cv<35?Moderate:High'} variability</div></div>
+    </div>`;
+  }
+
+  // Main stats table
+  html += `<div class="card" style="margin-bottom:16px">
+    <p class="card-title">📐 Full Descriptive Statistics Table</p>
+    <div class="table-wrap">
+      <table class="data-table" id="statsTable">
+        <thead><tr>
+          <th>${group==='indicator'?'Indicator':group==='district'?'District':'Indicator'}</th>
+          ${group==='both'?'<th>District</th>':''}
+          <th>N</th>
+          <th>Sum</th>
+          <th>Mean</th>
+          <th>Median</th>
+          <th>Mode</th>
+          <th>Std Dev</th>
+          <th>Variance</th>
+          <th>CV %</th>
+          <th>Min</th>
+          <th>Q1</th>
+          <th>Q3</th>
+          <th>Max</th>
+          <th>Range</th>
+          <th>IQR</th>
+          <th>Skewness</th>
+          <th>Kurtosis</th>
+          <th>Distribution</th>
+        </tr></thead>
+        <tbody>
+          ${computed.map(g => {
+            const s = g.stats;
+            return `<tr>
+              <td>${g.label}</td>
+              ${group==='both'?`<td>${g.sublabel}</td>`:''}
+              <td class="mono">${s.n}</td>
+              <td class="mono">${fmt(s.sum,0)}</td>
+              <td class="mono" style="font-weight:500">${fmt(s.mean)}</td>
+              <td class="mono">${fmt(s.median)}</td>
+              <td class="mono">${fmt(s.mode,0)}</td>
+              <td class="mono">${fmt(s.sd)}</td>
+              <td class="mono">${fmt(s.variance,0)}</td>
+              <td class="mono ${s.cv>50?'val-out':s.cv>30?'':''}">
+                ${fmt(s.cv)}%
+              </td>
+              <td class="mono">${fmt(s.min,0)}</td>
+              <td class="mono">${fmt(s.q1,0)}</td>
+              <td class="mono">${fmt(s.q3,0)}</td>
+              <td class="mono">${fmt(s.max,0)}</td>
+              <td class="mono">${fmt(s.range,0)}</td>
+              <td class="mono">${fmt(s.iqr,0)}</td>
+              <td class="mono">${skewLabel(s.skew)}</td>
+              <td class="mono">${fmt(s.kurt)}</td>
+              <td style="min-width:160px">${sparkBar(s.mean, maxMean)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+
+  // Mean comparison bars
+  html += `<div class="card" style="margin-bottom:16px">
+    <p class="card-title">📊 Mean Value Comparison</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${computed.map(g => {
+        const pct = maxMean > 0 ? (g.stats.mean/maxMean*100).toFixed(1) : 0;
+        const colors = {'Malaria Cases':'#EF4444','HIV Tests':'#8B5CF6','ANC 1st Visits':'#10B981','Immunisations':'#0EA5E9','Deliveries':'#F59E0B'};
+        const col = colors[g.label] || '#0EA5E9';
+        return `<div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+            <span style="color:var(--slate-600)">${g.label}${g.sublabel?' · '+g.sublabel:''}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:500">${Math.round(g.stats.mean).toLocaleString()} <span style="color:var(--slate-400);font-weight:400">± ${Math.round(g.stats.sd).toLocaleString()}</span></span>
+          </div>
+          <div style="background:var(--slate-100);border-radius:999px;height:10px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${col};border-radius:999px;transition:width .5s ease"></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+
+  // Interpretation guide
+  html += `<div class="card">
+    <p class="card-title">📖 How to Read These Statistics</p>
+    <div class="grid-2" style="gap:16px;font-size:12.5px;color:var(--slate-600);line-height:1.7">
+      <div>
+        <p style="font-weight:600;color:var(--navy);margin-bottom:6px">Central Tendency</p>
+        <p><strong>Mean</strong> — arithmetic average; sensitive to outliers</p>
+        <p><strong>Median</strong> — middle value; robust to outliers; better for skewed data</p>
+        <p><strong>Mode</strong> — most frequently occurring value</p>
+        <p style="margin-top:10px;font-weight:600;color:var(--navy)">Spread</p>
+        <p><strong>Std Dev (SD)</strong> — average distance from the mean; larger = more variation</p>
+        <p><strong>CV %</strong> — SD as % of mean; &lt;15% low, 15–35% moderate, &gt;35% high variation</p>
+        <p><strong>IQR</strong> — range of the middle 50% of values; robust spread measure</p>
+      </div>
+      <div>
+        <p style="font-weight:600;color:var(--navy);margin-bottom:6px">Distribution Shape</p>
+        <p><strong>Skewness</strong> — right-skewed means a few very high values pull the mean up (common in disease counts); left-skewed means a few very low values</p>
+        <p><strong>Kurtosis</strong> — &gt;0 means heavy tails (more extreme values than normal); &lt;0 means light tails</p>
+        <p style="margin-top:10px;font-weight:600;color:var(--navy)">Public Health Note</p>
+        <p>When <strong>Mean &gt; Median</strong>, data is right-skewed — a few high-burden districts or outbreak periods are pulling the average up. Consider reporting the median for fairer district comparisons.</p>
+      </div>
+    </div>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+function downloadStatCSV() {
+  if (!_lastStatRows.length) { showToast('Generate stats first','err'); return; }
+  const hdr = 'Group,Subgroup,N,Sum,Mean,Median,Mode,StdDev,Variance,CV_pct,Min,Q1,Q3,Max,Range,IQR,Skewness,Kurtosis';
+  const body = _lastStatRows.map(g => {
+    const s = g.stats;
+    return [g.label, g.sublabel||'', s.n, Math.round(s.sum), s.mean.toFixed(2), s.median.toFixed(2),
+            Math.round(s.mode), s.sd.toFixed(2), s.variance.toFixed(2), s.cv.toFixed(2),
+            Math.round(s.min), Math.round(s.q1), Math.round(s.q3), Math.round(s.max),
+            Math.round(s.range), Math.round(s.iqr), s.skew.toFixed(3), s.kurt.toFixed(3)].join(',');
+  }).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([hdr+'\n'+body],{type:'text/csv'}));
+  a.download = 'dhis2-descriptive-stats.csv'; a.click();
+  showToast('Stats CSV downloaded','ok');
+}
+
+// ── COMPARE ────────────────────────────────────────────────────
+function renderCompare() {
+  if (!S.connected || !S.rows.length) {
+    document.getElementById('cmpOut').innerHTML = noData(); return;
+  }
+  const indA = document.getElementById('cmpA').value;
+  const indB = document.getElementById('cmpB').value;
+  const per  = document.getElementById('cmpPer').value;
+  const view = document.getElementById('cmpView').value;
+
+  const allDistricts = [...new Set(S.rows.map(r=>r.district))].sort();
+  const sum = (ind, dist) => {
+    const rs = S.rows.filter(r => r.indicator===ind && r.district===dist && r.value!==null && (per==='all' || r.period===per));
+    return rs.reduce((s,r)=>s+r.value,0);
+  };
+  const tbl = allDistricts.map(d => ({ d, a: sum(indA,d), b: sum(indB,d) }));
+
+  let html = '';
+  if (view!=='chart') {
+    const totalA = tbl.reduce((s,r)=>s+r.a,0);
+    const totalB = tbl.reduce((s,r)=>s+r.b,0);
+    html += `<div class="grid-2" style="margin-bottom:16px">
+      <div class="metric"><div class="metric-label">${indA} — Total</div><div class="metric-value">${totalA.toLocaleString()}</div></div>
+      <div class="metric"><div class="metric-label">${indB} — Total</div><div class="metric-value">${totalB.toLocaleString()}</div></div>
+    </div>
+    <div class="card"><div class="table-wrap"><table class="data-table">
+      <thead><tr><th>District</th><th>${indA}</th><th>${indB}</th><th>Difference</th><th>Ratio A÷B</th></tr></thead>
+      <tbody>${tbl.map(r => {
+        const diff = r.a - r.b;
+        const ratio = r.b ? (r.a/r.b).toFixed(2) : '—';
+        const cls = diff>0 ? 'diff-up' : diff<0 ? 'diff-dn' : '';
+        return `<tr><td>${r.d}</td><td class="mono">${r.a.toLocaleString()}</td><td class="mono">${r.b.toLocaleString()}</td>
+          <td class="mono ${cls}">${diff>0?'+':''}${diff.toLocaleString()}</td><td class="mono">${ratio}</td></tr>`;
+      }).join('')}</tbody>
+    </table></div></div>`;
+  }
+  if (view!=='table') {
+    html += `<div class="card"><div style="position:relative;height:300px">
+      <canvas id="cmpChart" role="img" aria-label="Comparison chart: ${indA} vs ${indB}">${indA} vs ${indB} by district</canvas>
+    </div></div>`;
+  }
+  document.getElementById('cmpOut').innerHTML = html;
+
+  if (view!=='table') {
+    setTimeout(() => {
+      destroyChart('cmpChart');
+      const ctx = document.getElementById('cmpChart');
+      if (!ctx) return;
+      S.charts['cmpChart'] = new Chart(ctx, {
+        type:'bar',
+        data:{
+          labels: tbl.map(r=>r.d),
+          datasets:[
+            {label:indA, data:tbl.map(r=>r.a), backgroundColor:'#0EA5E9CC', borderRadius:4},
+            {label:indB, data:tbl.map(r=>r.b), backgroundColor:'#10B981CC', borderRadius:4},
+          ]
+        },
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{legend:{position:'top',labels:{boxWidth:12,font:{family:'IBM Plex Sans',size:12}}}},
+          scales:{
+            x:{grid:{display:false},ticks:{font:{size:11}}},
+            y:{grid:{color:'#f1f5f9'},ticks:{font:{family:'IBM Plex Mono',size:11},callback:v=>v.toLocaleString()}}
+          }
+        }
+      });
+    }, 60);
+  }
+}
+
+// ── DATA QUALITY ───────────────────────────────────────────────
+function calcQuality() {
+  const rows = S.rows;
+  const total    = rows.length;
+  const missing  = rows.filter(r=>r.value===null).length;
+  const outliers = rows.filter(r=>r.quality==='outlier').length;
+  const complete = total - missing;
+  const pct      = total ? Math.round(complete/total*100) : 0;
+
+  const indicators = [...new Set(rows.map(r=>r.indicator))];
+  const indStats = indicators.map(ind => {
+    const rs  = rows.filter(r=>r.indicator===ind);
+    const vs  = rs.filter(r=>r.value!==null).map(r=>r.value);
+    const avg = vs.length ? Math.round(vs.reduce((s,v)=>s+v,0)/vs.length) : 0;
+    const mis = rs.filter(r=>r.value===null).length;
+    const out = rs.filter(r=>r.quality==='outlier').length;
+    return {ind, total:rs.length, missing:mis, outliers:out, avg, min:Math.min(...vs)||0, max:Math.max(...vs)||0};
+  });
+  return {total, missing, outliers, complete, pct, indStats};
+}
+
+function renderClean() {
+  if (!S.connected || !S.rows.length) { document.getElementById('cleanOut').innerHTML = noData(); return; }
+  const q = calcQuality();
+  const cls = q.pct>=90?'good':q.pct>=75?'warn':'bad';
+  const progCls = q.pct>=90?'':'q.pct>=75?warn:bad';
+
+  document.getElementById('cleanOut').innerHTML = `
+    <div class="grid-4" style="margin-bottom:16px">
+      <div class="metric ${cls}">
+        <div class="metric-label">Completeness</div>
+        <div class="metric-value">${q.pct}%</div>
+        <div class="metric-sub">${q.complete} of ${q.total} records</div>
+        <div class="prog-wrap mt-4"><div class="prog-bar ${q.pct<75?'bad':q.pct<90?'warn':''}" style="width:${q.pct}%"></div></div>
+      </div>
+      <div class="metric ${q.missing>0?'bad':'good'}">
+        <div class="metric-label">Missing Values</div>
+        <div class="metric-value">${q.missing}</div>
+        <div class="metric-sub">${q.total?(q.missing/q.total*100).toFixed(1):0}% of records</div>
+      </div>
+      <div class="metric ${q.outliers>0?'warn':'good'}">
+        <div class="metric-label">Outliers (3σ)</div>
+        <div class="metric-value">${q.outliers}</div>
+        <div class="metric-sub">Extreme values detected</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Total Records</div>
+        <div class="metric-value">${q.total.toLocaleString()}</div>
+        <div class="metric-sub">${[...new Set(S.rows.map(r=>r.district))].length} districts</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="card-title">📋 Indicator-Level Quality Report</p>
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Indicator</th><th>Records</th><th>Missing</th><th>Outliers</th><th>Average</th><th>Min</th><th>Max</th><th>Status</th></tr></thead>
+        <tbody>${q.indStats.map(s=>`<tr>
+          <td>${s.ind}</td>
+          <td class="mono">${s.total}</td>
+          <td class="mono">${s.missing>0?`<span class="badge b-miss">${s.missing}</span>`:'<span class="badge b-ok">0</span>'}</td>
+          <td class="mono">${s.outliers>0?`<span class="badge b-out">${s.outliers}</span>`:'<span class="badge b-ok">0</span>'}</td>
+          <td class="mono">${s.avg.toLocaleString()}</td>
+          <td class="mono">${s.min.toLocaleString()}</td>
+          <td class="mono">${s.max.toLocaleString()}</td>
+          <td>${s.missing===0&&s.outliers===0?'<span class="badge b-ok">✓ Clean</span>':'<span class="badge b-out">⚠ Issues</span>'}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+
+    <div class="card">
+      <p class="card-title">🧹 Automated Cleaning Actions</p>
+      <div class="grid-2">
+        <div>
+          <p class="text-sm text-muted mb-8"><strong>${q.missing}</strong> missing values — choose how to handle:</p>
+          <div class="btn-row" style="margin-top:0">
+            <button class="btn btn-secondary btn-sm" onclick="cleanMissing('mean')">Fill with mean</button>
+            <button class="btn btn-secondary btn-sm" onclick="cleanMissing('median')">Fill with median</button>
+            <button class="btn btn-secondary btn-sm" onclick="cleanMissing('zero')">Fill with zero</button>
+            <button class="btn btn-danger btn-sm" onclick="cleanMissing('drop')">Drop rows</button>
+          </div>
+        </div>
+        <div>
+          <p class="text-sm text-muted mb-8"><strong>${q.outliers}</strong> outliers (3σ) — choose how to handle:</p>
+          <div class="btn-row" style="margin-top:0">
+            <button class="btn btn-secondary btn-sm" onclick="cleanOutliers('cap')">Cap at 3σ</button>
+            <button class="btn btn-danger btn-sm" onclick="cleanOutliers('drop')">Drop rows</button>
+            <button class="btn btn-ghost btn-sm" onclick="cleanOutliers('keep')">Keep flagged</button>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row mt-16">
+        <button class="btn btn-primary" onclick="downloadCSV()">⬇ Export Cleaned Dataset</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetRows()">↺ Reset to original</button>
+      </div>
+    </div>`;
+}
+
+function cleanMissing(method) {
+  const inds = [...new Set(S.rows.map(r=>r.indicator))];
+  inds.forEach(ind => {
+    const vs = S.rows.filter(r=>r.indicator===ind&&r.value!==null).map(r=>r.value);
+    let fill = 0;
+    if (method==='mean')   fill = Math.round(vs.reduce((s,v)=>s+v,0)/(vs.length||1));
+    if (method==='median') { const s=[...vs].sort((a,b)=>a-b); fill = s[Math.floor(s.length/2)]||0; }
+    S.rows.forEach(r => {
+      if (r.indicator===ind && r.value===null) {
+        if (method==='drop') r._drop=true;
+        else { r.value=fill; r.quality='imputed'; }
+      }
+    });
+  });
+  if (method==='drop') S.rows=S.rows.filter(r=>!r._drop);
+  showToast(`Missing values handled (${method})`,'ok');
+  renderClean();
+}
+
+function cleanOutliers(method) {
+  const inds = [...new Set(S.rows.map(r=>r.indicator))];
+  inds.forEach(ind => {
+    const vs = S.rows.filter(r=>r.indicator===ind&&r.value!==null).map(r=>r.value);
+    const mu = vs.reduce((s,v)=>s+v,0)/(vs.length||1);
+    const sd = Math.sqrt(vs.reduce((s,v)=>s+Math.pow(v-mu,2),0)/(vs.length||1));
+    const cap = mu + 3*sd;
+    S.rows.forEach(r => {
+      if (r.indicator===ind && r.quality==='outlier') {
+        if (method==='cap')  { r.value=Math.round(cap); r.quality='capped'; }
+        if (method==='drop') r._drop=true;
+        // 'keep' leaves as-is
+      }
+    });
+  });
+  if (method==='drop') S.rows=S.rows.filter(r=>!r._drop);
+  showToast(`Outliers handled (${method})`,'ok');
+  renderClean();
+}
+
+function resetRows() { S.rows=generateDemo(); showToast('Reset to original data','ok'); renderClean(); }
+
+// ── DASHBOARD ──────────────────────────────────────────────────
+const COLORS = ['#0EA5E9','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#06B6D4'];
+
+function destroyChart(id) { if(S.charts[id]){S.charts[id].destroy();delete S.charts[id];} }
+
+function renderDashboard() {
+  if (!S.connected || !S.rows.length) { document.getElementById('dashOut').innerHTML = noData(); return; }
+  const ind  = document.getElementById('dashInd').value;
+  const type = document.getElementById('dashType').value;
+  const rows = S.rows.filter(r=>r.indicator===ind && r.value!==null);
+  const dists   = [...new Set(rows.map(r=>r.district))].sort();
+  const periods = [...new Set(rows.map(r=>r.period))].sort();
+
+  const vs = rows.map(r=>r.value);
+  const tot  = vs.reduce((s,v)=>s+v,0);
+  const avg  = Math.round(tot/(vs.length||1));
+  const peak = Math.max(...vs);
+  const pkRow = rows.find(r=>r.value===peak);
+
+  let chartData;
+  if (type==='bar') {
+    // By district, last 4 periods
+    const last4 = periods.slice(-4);
+    chartData = {
+      labels: last4,
+      datasets: dists.map((d,i)=>({
+        label:d,
+        data: last4.map(p => { const r=rows.find(x=>x.district===d&&x.period===p); return r?r.value:null; }),
+        backgroundColor: COLORS[i%COLORS.length]+'BB',
+        borderRadius:4,
+      }))
+    };
+  } else if (type==='line') {
+    chartData = {
+      labels: periods,
+      datasets: dists.map((d,i)=>({
+        label:d,
+        data: periods.map(p => { const r=rows.find(x=>x.district===d&&x.period===p); return r?r.value:null; }),
+        borderColor: COLORS[i%COLORS.length],
+        backgroundColor: 'transparent',
+        borderWidth:2, tension:.3, pointRadius:3,
+      }))
+    };
+  } else {
+    // Donut — total by district
+    chartData = {
+      labels: dists,
+      datasets:[{
+        data: dists.map(d=>rows.filter(r=>r.district===d).reduce((s,r)=>s+r.value,0)),
+        backgroundColor: COLORS,
+        borderWidth:0,
+      }]
+    };
+  }
+
+  document.getElementById('dashOut').innerHTML = `
+    <div class="grid-4" style="margin-bottom:16px">
+      <div class="metric"><div class="metric-label">Total</div><div class="metric-value">${tot.toLocaleString()}</div><div class="metric-sub">all districts · all periods</div></div>
+      <div class="metric"><div class="metric-label">Average</div><div class="metric-value">${avg.toLocaleString()}</div><div class="metric-sub">per district-period</div></div>
+      <div class="metric"><div class="metric-label">Peak</div><div class="metric-value">${peak.toLocaleString()}</div><div class="metric-sub">${pkRow?pkRow.district+' '+pkRow.period:''}</div></div>
+      <div class="metric"><div class="metric-label">Districts</div><div class="metric-value">${dists.length}</div><div class="metric-sub">${periods.length} periods</div></div>
+    </div>
+    <div class="card">
+      <div class="flex-b mb-16">
+        <p class="card-title" style="margin:0">${ind} — ${type==='line'?'Trend':'Distribution'}</p>
+        <button class="btn btn-ghost btn-sm" onclick="saveChart()">⬇ Save PNG</button>
+      </div>
+      <div style="position:relative;height:${type==='bar'?'340':'300'}px">
+        <canvas id="dashChart" role="img" aria-label="${ind} visualisation by district">${ind} chart</canvas>
+      </div>
+    </div>`;
+
+  setTimeout(() => {
+    destroyChart('dashChart');
+    const ctx = document.getElementById('dashChart');
+    if (!ctx) return;
+    S.charts['dashChart'] = new Chart(ctx, {
+      type: type==='line'?'line':type==='doughnut'?'doughnut':'bar',
+      data: chartData,
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{position:type==='doughnut'?'right':'top',labels:{boxWidth:12,font:{family:'IBM Plex Sans',size:12}}},
+          tooltip:{callbacks:{label:c=>' '+(c.dataset.label||c.label)+': '+(c.raw||0).toLocaleString()}}
+        },
+        scales: type==='doughnut' ? {} : {
+          x:{grid:{display:false},ticks:{font:{size:11,family:'IBM Plex Mono'}}},
+          y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11,family:'IBM Plex Mono'},callback:v=>v.toLocaleString()}}
+        }
+      }
+    });
+  }, 60);
+}
+
+function saveChart() {
+  const c = document.getElementById('dashChart');
+  if (!c) return;
+  const a=document.createElement('a'); a.download='dhis2-chart.png'; a.href=c.toDataURL(); a.click();
+}
+
+// ── AI INSIGHTS ────────────────────────────────────────────────
+function renderInsights() {
+  const el = document.getElementById('insightsOut');
+  if (!S.connected || !S.rows.length) { el.innerHTML=noData(); return; }
+
+  el.innerHTML = `
+    ${!S.apiKey?'<div class="hint warn">⚠️ Add your <strong>Anthropic API key</strong> (click 🔑 AI Key in the header) to unlock AI-powered insights.</div>':''}
+    <div class="card">
+      <p class="card-title">🤖 Ask Claude About Your Data</p>
+      <div class="form-group">
+        <label class="form-label">Your question</label>
+        <textarea class="form-input" id="aiQ" rows="3" placeholder="e.g. What are the key trends in this health data? Which district has the highest disease burden? Are there seasonal patterns in malaria?"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="askAI()">Ask Claude ↗</button>
+        <button class="btn btn-ghost btn-sm" onclick="fillAI('Summarise the key trends and patterns in this dataset')">Summarise trends</button>
+        <button class="btn btn-ghost btn-sm" onclick="fillAI('Identify data quality concerns and anomalies')">Find anomalies</button>
+        <button class="btn btn-ghost btn-sm" onclick="fillAI('Generate public health recommendations based on this data')">Recommendations</button>
+        <button class="btn btn-ghost btn-sm" onclick="fillAI('Identify which districts need priority intervention and why')">Priority districts</button>
+      </div>
+    </div>
+    <div id="aiResp"></div>`;
+}
+
+function fillAI(t) { const el=document.getElementById('aiQ'); if(el) el.value=t; }
+
+async function askAI() {
+  const q = (document.getElementById('aiQ')||{}).value?.trim();
+  if (!q) return;
+  if (!S.apiKey) { showToast('Add API key first','err'); openModal('apiModal'); return; }
+
+  document.getElementById('aiResp').innerHTML = '<div class="loading"><div class="spin"></div><span>Claude is analysing your data…</span></div>';
+
+  const qd = calcQuality();
+  const dists = [...new Set(S.rows.map(r=>r.district))];
+  const inds  = [...new Set(S.rows.map(r=>r.indicator))];
+  const pers  = [...new Set(S.rows.map(r=>r.period))].sort();
+
+  const indSummary = inds.map(ind => {
+    const vs = S.rows.filter(r=>r.indicator===ind&&r.value!==null);
+    const avg = Math.round(vs.reduce((s,r)=>s+r.value,0)/(vs.length||1));
+    const byDist = dists.map(d=>`${d}:${vs.filter(r=>r.district===d).reduce((s,r)=>s+r.value,0).toLocaleString()}`).join(', ');
+    return `${ind} (avg ${avg.toLocaleString()}): ${byDist}`;
+  }).join('\n');
+
+  const ctx = `You are a senior public health data analyst reviewing DHIS2 data from Malawi.
+
+Dataset overview:
+- Districts: ${dists.join(', ')}
+- Indicators: ${inds.join(', ')}
+- Time periods: ${pers.join(', ')}
+- Total records: ${qd.total} | Completeness: ${qd.pct}% | Missing: ${qd.missing} | Outliers: ${qd.outliers}
+
+Aggregated totals by indicator and district:
+${indSummary}
+
+User question: ${q}
+
+Provide a concise, evidence-based analysis with specific numbers from the data. Include actionable public health implications. Use bullet points where helpful. Keep it practical.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:ctx}]})
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = data.content[0].text;
+    document.getElementById('aiResp').innerHTML = `
+      <div class="card">
+        <p class="card-title">🤖 Claude's Analysis</p>
+        <div class="ai-out">${text}</div>
+        <div class="btn-row mt-16">
+          <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(document.querySelector('.ai-out').textContent).then(()=>showToast('Copied','ok'))">📋 Copy analysis</button>
+        </div>
+      </div>`;
+  } catch(e) {
+    document.getElementById('aiResp').innerHTML = `<div class="hint err">❌ AI request failed: ${e.message}. Check your API key.</div>`;
+  }
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('nav-'+tab).classList.add('active');
+  if (tab==='stats')     renderStats();
+  if (tab==='compare')   renderCompare();
+  if (tab==='clean')     renderClean();
+  if (tab==='dashboard') renderDashboard();
+  if (tab==='insights')  renderInsights();
+}
+
+// ── UTILITIES ──────────────────────────────────────────────────
+function updateBadge(on, label) {
+  const el=document.getElementById('connBadge');
+  el.className='conn-badge '+(on?'on':'off');
+  el.innerHTML=`<span class="conn-dot"></span>${label}`;
+}
+
+function showToast(msg, type='ok') {
+  const t=document.getElementById('toast');
+  t.className='toast '+type;
+  t.innerHTML=(type==='ok'?'✅':'❌')+' '+msg;
+  void t.offsetWidth; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+function downloadCSV() {
+  const rows = S.filtered.length ? S.filtered : S.rows;
+  const csv = 'district,period,indicator,value,quality\n' +
+    rows.map(r=>[r.district,r.period,r.indicator,r.value??'',r.quality].join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='dhis2-export.csv'; a.click();
+  showToast('CSV downloaded','ok');
+}
+
+function noData() {
+  return `<div class="empty"><div class="empty-icon">🔗</div>
+    <p class="empty-title">No data loaded</p>
+    <p class="empty-desc"><a href="#" onclick="switchTab('connect');return false">Connect a data source</a> to get started</p></div>`;
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function saveKey() {
+  const k=document.getElementById('apiKeyIn').value.trim();
+  S.apiKey=k; localStorage.setItem('anthropic_key',k);
+  closeModal('apiModal');
+  showToast('API key saved','ok');
+}
+
+// ── INIT ───────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if (S.apiKey) document.getElementById('apiKeyIn').value = S.apiKey;
+});
+</script>
+</body>
+</html>
