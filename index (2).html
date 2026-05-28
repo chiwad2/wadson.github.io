@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HealthBridge Analytics — by Wadson Chirwa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0D1117;--ink-80:#161B22;--ink-60:#21262D;--ink-40:#30363D;
+  --lead:#58626E;--mist:#8B949E;--haze:#C9D1D9;--paper:#F0F6FF;--white:#FFFFFF;
+  --azure:#1D76DB;--azure-light:#cce3ff;--azure-dark:#1558A8;
+  --jade:#1A7F4B;--jade-light:#d0f4e4;
+  --amber:#D4860A;--amber-light:#fdf0d3;
+  --crimson:#CF3030;--crimson-light:#fde8e8;
+  --violet:#6E40C9;--violet-light:#ede8fb;
+  --r:6px;--rlg:10px;--rxl:14px;
+  --sidebar:220px;--hdr:52px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --shadow:0 4px 12px rgba(0,0,0,.1),0 2px 4px rgba(0,0,0,.06);
+  --shadow-lg:0 12px 32px rgba(0,0,0,.15),0 4px 8px rgba(0,0,0,.08);
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--paper);color:var(--ink);}
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+
+/* HEADER */
+.hdr{height:var(--hdr);background:var(--ink);display:flex;align-items:center;padding:0 18px;gap:12px;z-index:30;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);}
+.hdr-brand{display:flex;align-items:center;gap:9px;text-decoration:none;}
+.hdr-icon{width:28px;height:28px;background:linear-gradient(135deg,#1D76DB,#6E40C9);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hdr-icon svg{width:16px;height:16px;fill:white;}
+.hdr-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:white;letter-spacing:-.01em;white-space:nowrap;}
+.hdr-sep{width:1px;height:18px;background:rgba(255,255,255,.1);}
+.hdr-tagline{font-size:11px;color:var(--mist);letter-spacing:.04em;font-weight:400;}
+.hdr-spacer{flex:1;}
+.hdr-author{font-size:11px;color:var(--mist);}
+.hdr-author strong{color:var(--haze);}
+.hdr-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--haze);border-radius:var(--r);padding:5px 11px;font-size:12px;cursor:pointer;font-family:inherit;transition:background .15s;display:flex;align-items:center;gap:5px;}
+.hdr-btn:hover{background:rgba(255,255,255,.13);}
+.conn-pill{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;display:flex;align-items:center;gap:5px;}
+.conn-pill.on{background:rgba(26,127,75,.2);color:#3FB87A;border:1px solid rgba(26,127,75,.3);}
+.conn-pill.off{background:rgba(255,255,255,.05);color:var(--mist);border:1px solid rgba(255,255,255,.1);}
+.cdot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+/* LAYOUT */
+.body{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);background:var(--ink-80);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;border-right:1px solid rgba(255,255,255,.05);}
+.nav-sec{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--lead);padding:14px 14px 4px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 14px;color:var(--mist);cursor:pointer;transition:all .14s;font-size:12.5px;border-left:2px solid transparent;user-select:none;}
+.nav-item:hover{color:var(--haze);background:rgba(255,255,255,.04);}
+.nav-item.active{color:white;background:rgba(29,118,219,.12);border-left-color:var(--azure);}
+.nav-ic{font-size:15px;width:18px;text-align:center;flex-shrink:0;line-height:1;}
+.nav-badge{margin-left:auto;background:rgba(29,118,219,.25);color:#7BB8F6;border-radius:10px;padding:1px 6px;font-size:10px;font-family:'DM Mono',monospace;}
+.sidebar-foot{margin-top:auto;padding:12px 14px;border-top:1px solid rgba(255,255,255,.05);}
+.sidebar-foot p{font-size:10.5px;color:var(--lead);line-height:1.7;}
+.sidebar-foot a{color:var(--azure);text-decoration:none;}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;background:var(--paper);}
+.page{display:none;animation:pageIn .18s ease;}
+.page.active{display:block;}
+@keyframes pageIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.page-inner{padding:24px 28px;}
+.page-hdr{margin-bottom:20px;}
+.page-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--ink);margin-bottom:2px;}
+.page-sub{font-size:12.5px;color:var(--lead);line-height:1.5;}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid #D9E2EC;border-radius:var(--rlg);padding:18px;margin-bottom:14px;box-shadow:var(--shadow-sm);}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.card-title{font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:7px;}
+.card-actions{display:flex;gap:6px;align-items:center;}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+
+/* KPI TILES */
+.kpi{background:var(--white);border:1px solid #D9E2EC;border-radius:var(--rlg);padding:14px 16px;box-shadow:var(--shadow-sm);}
+.kpi-label{font-size:10.5px;font-weight:500;color:var(--lead);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
+.kpi-val{font-family:'DM Mono',monospace;font-size:21px;font-weight:500;color:var(--ink);line-height:1.1;}
+.kpi-sub{font-size:11px;color:var(--mist);margin-top:3px;}
+.kpi.good .kpi-val{color:var(--jade);}
+.kpi.warn .kpi-val{color:var(--amber);}
+.kpi.bad  .kpi-val{color:var(--crimson);}
+
+/* FORMS */
+.fg{margin-bottom:12px;}
+.fl{display:block;font-size:11.5px;font-weight:500;color:var(--lead);margin-bottom:4px;}
+.fi{width:100%;border:1px solid #D9E2EC;border-radius:var(--r);padding:7px 10px;font-size:13px;font-family:inherit;color:var(--ink);background:white;outline:none;transition:border-color .14s;}
+.fi:focus{border-color:var(--azure);box-shadow:0 0 0 3px rgba(29,118,219,.1);}
+select.fi{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%2358626E' d='M5 6L0 0h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;padding-right:26px;appearance:none;}
+textarea.fi{resize:vertical;min-height:80px;font-family:'DM Mono',monospace;font-size:12px;}
+
+/* BUTTONS */
+.btn{border:none;border-radius:var(--r);padding:7px 14px;font-size:12.5px;font-weight:500;font-family:inherit;cursor:pointer;transition:all .14s;display:inline-flex;align-items:center;gap:5px;line-height:1.4;}
+.btn-primary{background:var(--azure);color:white;}
+.btn-primary:hover{background:var(--azure-dark);}
+.btn-success{background:var(--jade);color:white;}
+.btn-success:hover{background:#156b3e;}
+.btn-sec{background:var(--white);color:var(--ink-40);border:1px solid #D9E2EC;}
+.btn-sec:hover{background:var(--paper);}
+.btn-ghost{background:transparent;color:var(--lead);border:1px solid #D9E2EC;}
+.btn-ghost:hover{background:var(--paper);}
+.btn-danger{background:var(--crimson);color:white;}
+.btn-sm{padding:4px 10px;font-size:11.5px;}
+.btn-lg{padding:10px 20px;font-size:14px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.brow{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px;align-items:center;}
+
+/* TABLES */
+.tw{overflow-x:auto;border-radius:var(--r);border:1px solid #D9E2EC;}
+.dt{width:100%;border-collapse:collapse;font-size:12.5px;}
+.dt th{background:var(--paper);padding:9px 12px;text-align:left;font-weight:600;font-size:11px;color:var(--lead);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #D9E2EC;white-space:nowrap;}
+.dt td{padding:8px 12px;border-bottom:1px solid #F0F4F8;color:var(--ink);}
+.dt td.mono{font-family:'DM Mono',monospace;font-size:12px;}
+.dt tr:last-child td{border-bottom:none;}
+.dt tr:hover td{background:#F7FAFF;}
+.bdg{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:500;}
+.bok{background:var(--jade-light);color:#0E5C30;}
+.bmiss{background:var(--crimson-light);color:#8B1A1A;}
+.bout{background:var(--amber-light);color:#7A4C00;}
+.binfo{background:var(--azure-light);color:#0D4F99;}
+.bimp{background:var(--violet-light);color:#4A1F8C;}
+.null-cell{color:#C9D1D9;font-style:italic;}
+.out-cell{color:var(--crimson);font-weight:500;}
+.imp-cell{color:var(--violet);}
+
+/* HINT BOXES */
+.hint{display:flex;align-items:flex-start;gap:8px;background:var(--azure-light);border:1px solid #97C3F0;border-radius:var(--r);padding:10px 12px;font-size:12.5px;color:#0D4F99;margin-bottom:12px;line-height:1.5;}
+.hint.warn{background:var(--amber-light);border-color:#F6C96E;color:#6B3B00;}
+.hint.err{background:var(--crimson-light);border-color:#F5ABAB;color:#6B0000;}
+.hint.ok{background:var(--jade-light);border-color:#7BD6A8;color:#0A4A26;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(13,17,23,.7);z-index:50;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .18s;}
+.overlay.open{opacity:1;pointer-events:all;}
+.modal{background:white;border-radius:var(--rxl);width:460px;max-width:94vw;padding:24px;box-shadow:var(--shadow-lg);}
+.modal-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;margin-bottom:12px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--ink);color:white;padding:11px 16px;border-radius:var(--rlg);font-size:12.5px;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:8px;z-index:100;transform:translateY(70px);opacity:0;transition:all .28s cubic-bezier(.34,1.56,.64,1);max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.ok{border-left:3px solid var(--jade);}
+.toast.err{border-left:3px solid var(--crimson);}
+
+/* SPINNER */
+.loading{display:flex;align-items:center;justify-content:center;padding:36px;color:var(--mist);flex-direction:column;gap:10px;font-size:13px;}
+.spin{width:22px;height:22px;border:2px solid #E2E8F0;border-top-color:var(--azure);border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* EMPTY */
+.empty{text-align:center;padding:44px 24px;color:var(--mist);}
+.empty-ic{font-size:36px;margin-bottom:10px;}
+.empty-title{font-size:14px;font-weight:600;color:var(--lead);margin-bottom:5px;}
+.empty-desc{font-size:12.5px;}
+
+/* AI OUTPUT */
+.ai-out{background:var(--ink-80);border-radius:var(--r);padding:18px;color:#CBD5E1;font-size:12.5px;line-height:1.8;white-space:pre-wrap;font-family:'DM Mono',monospace;}
+.ai-out h3,.ai-out strong{color:var(--haze);}
+
+/* PROGRESS BAR */
+.prog{background:#E9EFF6;border-radius:999px;height:6px;overflow:hidden;margin-top:4px;}
+.prog-f{height:100%;border-radius:999px;transition:width .5s ease;}
+.prog-f.ok{background:var(--jade);}
+.prog-f.warn{background:var(--amber);}
+.prog-f.bad{background:var(--crimson);}
+
+/* SOURCE CARDS (data source picker) */
+.src-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.src-card{border:1px solid #D9E2EC;border-radius:var(--rlg);padding:20px 16px;cursor:pointer;transition:all .18s;text-align:center;background:white;box-shadow:var(--shadow-sm);}
+.src-card:hover{border-color:var(--azure);transform:translateY(-2px);box-shadow:var(--shadow);}
+.src-card.sel{border-color:var(--azure);border-width:2px;background:var(--azure-light);}
+.sc-ic{font-size:28px;margin-bottom:8px;}
+.sc-title{font-weight:600;font-size:13px;margin-bottom:3px;}
+.sc-desc{font-size:11.5px;color:var(--lead);line-height:1.5;}
+
+/* DATASET TAGS */
+.ds-tag{display:inline-flex;align-items:center;gap:5px;background:var(--ink-80);color:var(--haze);border-radius:5px;padding:3px 9px;font-size:11.5px;margin:2px;cursor:pointer;border:1px solid rgba(255,255,255,.08);}
+.ds-tag .dtag-rm{color:var(--mist);font-size:13px;margin-left:3px;}
+.ds-tag:hover .dtag-rm{color:var(--crimson);}
+.ds-dot{width:7px;height:7px;border-radius:50%;}
+
+/* STAT TABLE HIGHLIGHT */
+.st-hi{background:#F7FBFF;}
+
+/* CORRELATION CELL */
+.corr-hi{font-weight:600;}
+.corr-pos{color:var(--jade);}
+.corr-neg{color:var(--crimson);}
+
+/* REGRESSION */
+.reg-box{background:var(--paper);border:1px solid #D9E2EC;border-radius:var(--r);padding:14px;font-size:12.5px;line-height:1.8;font-family:'DM Mono',monospace;}
+
+/* DIFF COLOURS */
+.d-up{color:var(--jade);font-weight:500;}
+.d-dn{color:var(--crimson);font-weight:500;}
+
+/* WELCOME BANNER */
+.welcome{background:linear-gradient(135deg,var(--ink) 0%,#1a1f3c 100%);border-radius:var(--rlg);padding:24px 28px;margin-bottom:18px;color:white;position:relative;overflow:hidden;}
+.welcome::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(29,118,219,.25) 0%,transparent 70%);pointer-events:none;}
+.welcome-h{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:5px;}
+.welcome-p{font-size:12.5px;color:#94A3B8;line-height:1.6;max-width:520px;}
+.welcome-steps{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;}
+.ws{background:rgba(255,255,255,.07);border-radius:var(--r);padding:10px 14px;flex:1;min-width:110px;border:1px solid rgba(255,255,255,.05);}
+.ws-n{font-size:10px;color:var(--azure);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
+.ws-t{font-size:12px;color:#94A3B8;}
+
+/* CHART GRID */
+.chart-grid{display:grid;gap:14px;margin-bottom:14px;}
+.chart-grid.cols-1{grid-template-columns:1fr;}
+.chart-grid.cols-2{grid-template-columns:1fr 1fr;}
+.chart-wrap{position:relative;}
+
+/* UTIL */
+.flex{display:flex;} .fxc{display:flex;align-items:center;} .fxb{display:flex;align-items:center;justify-content:space-between;}
+.gap6{gap:6px;} .gap10{gap:10px;} .gap14{gap:14px;}
+.mt4{margin-top:4px;} .mt8{margin-top:8px;} .mt12{margin-top:12px;} .mt16{margin-top:16px;}
+.mb8{margin-bottom:8px;} .mb12{margin-bottom:12px;} .mb16{margin-bottom:16px;}
+.sm{font-size:12px;} .muted{color:var(--lead);}
+.mono{font-family:'DM Mono',monospace;}
+.bold{font-weight:600;}
+.w100{width:100%;}
+a{color:var(--azure);}
+.sep{height:1px;background:#E9EFF6;margin:14px 0;}
+
+/* SCROLL */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:999px;}
+.main::-webkit-scrollbar-thumb{background:#C9D1D9;}
+
+/* DATASET PANEL */
+.ds-panel{background:var(--ink-60);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;}
+.ds-panel-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.ds-name{color:var(--haze);font-size:12px;font-weight:500;}
+.ds-meta{color:var(--mist);font-size:11px;}
+
+/* p-value badge */
+.pval-sig{color:var(--crimson);font-weight:600;}
+.pval-ns{color:var(--lead);}
+
+/* TABS inside pages */
+.inner-tabs{display:flex;gap:0;border-bottom:1px solid #D9E2EC;margin-bottom:16px;}
+.inner-tab{padding:8px 16px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--lead);border-bottom:2px solid transparent;transition:all .14s;margin-bottom:-1px;}
+.inner-tab:hover{color:var(--ink);}
+.inner-tab.active{color:var(--azure);border-bottom-color:var(--azure);}
+.inner-pane{display:none;}
+.inner-pane.active{display:block;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HEADER -->
+<header class="hdr">
+  <a class="hdr-brand" href="#">
+    <div class="hdr-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+    </div>
+    <span class="hdr-name">HealthBridge</span>
+  </a>
+  <div class="hdr-sep"></div>
+  <span class="hdr-tagline">Open Health Analytics Platform</span>
+  <div class="hdr-spacer"></div>
+  <span class="hdr-author">by <strong>Wadson Chirwa</strong></span>
+  <div class="hdr-sep"></div>
+  <span id="connPill" class="conn-pill off"><span class="cdot"></span>No data loaded</span>
+  <button class="hdr-btn" onclick="openModal('aiKeyModal')">🔑 AI Key</button>
+  <button class="hdr-btn" onclick="showHelp()">? Help</button>
+</header>
+
+<div class="body">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="nav-sec">Data</div>
+  <div class="nav-item active" id="nav-connect" onclick="nav('connect')"><span class="nav-ic">🔌</span>Data Sources</div>
+  <div class="nav-item" id="nav-query" onclick="nav('query')"><span class="nav-ic">🔍</span>Query & Explore</div>
+  <div class="nav-sec">Analyse</div>
+  <div class="nav-item" id="nav-stats" onclick="nav('stats')"><span class="nav-ic">📐</span>Descriptive Stats</div>
+  <div class="nav-item" id="nav-inference" onclick="nav('inference')"><span class="nav-ic">📊</span>Inferential Stats</div>
+  <div class="nav-item" id="nav-compare" onclick="nav('compare')"><span class="nav-ic">⚖️</span>Compare Datasets</div>
+  <div class="nav-item" id="nav-clean" onclick="nav('clean')"><span class="nav-ic">✨</span>Data Quality</div>
+  <div class="nav-sec">Visualise & Report</div>
+  <div class="nav-item" id="nav-dashboard" onclick="nav('dashboard')"><span class="nav-ic">📈</span>Dashboard</div>
+  <div class="nav-item" id="nav-insights" onclick="nav('insights')"><span class="nav-ic">🤖</span>AI Insights</div>
+  <div class="sidebar-foot">
+    <p>HealthBridge Analytics v2.0<br>
+    <strong style="color:#8B949E;">Wadson Chirwa</strong><br>
+    Zomba District Health Office<br>
+    Malawi 🇲🇼<br>
+    <a href="mailto:wadsonchirwa2@gmail.com">wadsonchirwa2@gmail.com</a></p>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main" id="main">
+
+<!-- ══════ CONNECT ══════ -->
+<div class="page active" id="page-connect">
+<div class="page-inner">
+  <div class="welcome">
+    <div class="welcome-h">Welcome to HealthBridge Analytics ⚕️</div>
+    <p class="welcome-p">An open-source health informatics platform. Connect any open data API, upload files, or paste data — then query, compare, statistically analyse, visualise, and generate AI-powered interpretations.</p>
+    <div class="welcome-steps">
+      <div class="ws"><div class="ws-n">Step 1</div><div class="ws-t">Add data from URL, file, or paste</div></div>
+      <div class="ws"><div class="ws-n">Step 2</div><div class="ws-t">Query and explore your dataset</div></div>
+      <div class="ws"><div class="ws-n">Step 3</div><div class="ws-t">Run descriptive & inferential stats</div></div>
+      <div class="ws"><div class="ws-n">Step 4</div><div class="ws-t">Compare, visualise, and get AI insights</div></div>
+    </div>
+  </div>
+
+  <p class="page-title">Choose Data Source</p>
+  <p class="page-sub mb12">Load data from an open-access API, upload a CSV/JSON file, or paste data directly. You can add multiple datasets for comparison.</p>
+
+  <div class="src-grid">
+    <div class="src-card" onclick="selectSrc('url')" id="sc-url">
+      <div class="sc-ic">🌐</div>
+      <div class="sc-title">Open Data URL</div>
+      <div class="sc-desc">Paste any open-access API or CSV URL — auto-generates query code</div>
+    </div>
+    <div class="src-card" onclick="selectSrc('upload')" id="sc-upload">
+      <div class="sc-ic">📁</div>
+      <div class="sc-title">Upload File</div>
+      <div class="sc-desc">Upload CSV, TSV, or JSON files from your computer</div>
+    </div>
+    <div class="src-card" onclick="selectSrc('paste')" id="sc-paste">
+      <div class="sc-ic">📋</div>
+      <div class="sc-title">Paste Data</div>
+      <div class="sc-desc">Paste CSV, TSV, or comma-separated tabular data directly</div>
+    </div>
+  </div>
+
+  <!-- URL Panel -->
+  <div id="pn-url" class="card" style="display:none">
+    <div class="card-hdr"><p class="card-title">🌐 Open Data URL</p></div>
+    <div class="hint">💡 Supports any direct CSV URL (e.g. data.gov, WHO, HMIS, GitHub raw), or JSON APIs returning arrays of objects. The tool auto-detects format and generates query code.</div>
+    <div class="fg">
+      <label class="fl">Data URL</label>
+      <input type="url" class="fi" id="dataUrl" placeholder="https://raw.githubusercontent.com/... or https://data.gov/resource/...csv">
+    </div>
+    <div class="g2">
+      <div class="fg">
+        <label class="fl">Dataset Name</label>
+        <input class="fi" id="urlName" placeholder="e.g. Malaria Cases 2023">
+      </div>
+      <div class="fg">
+        <label class="fl">Format</label>
+        <select class="fi" id="urlFormat">
+          <option value="auto">Auto-detect</option>
+          <option value="csv">CSV</option>
+          <option value="json">JSON array</option>
+          <option value="tsv">TSV</option>
+        </select>
+      </div>
+    </div>
+    <div id="urlQueryCode" style="display:none" class="mb12">
+      <label class="fl">Generated Query Code</label>
+      <textarea class="fi" id="urlCodeArea" rows="5" readonly style="background:#F8FAFC"></textarea>
+      <button class="btn btn-ghost btn-sm mt4" onclick="copyCode()">📋 Copy code</button>
+    </div>
+    <div class="brow">
+      <button class="btn btn-primary" onclick="generateQueryCode()">⚙️ Generate Query Code</button>
+      <button class="btn btn-success" onclick="loadFromUrl()">⬇ Load Data</button>
+    </div>
+    <div id="urlResult" class="mt8"></div>
+  </div>
+
+  <!-- UPLOAD Panel -->
+  <div id="pn-upload" class="card" style="display:none">
+    <div class="card-hdr"><p class="card-title">📁 Upload File</p></div>
+    <div class="fg">
+      <label class="fl">Dataset Name</label>
+      <input class="fi" id="uploadName" placeholder="e.g. District Health Data Q1 2024">
+    </div>
+    <div class="fg">
+      <label class="fl">Select file (CSV, TSV, JSON)</label>
+      <input type="file" class="fi" id="fileInput" accept=".csv,.tsv,.txt,.json" onchange="fileChosen(this)">
+    </div>
+    <div id="uploadPreview"></div>
+    <div class="brow">
+      <button class="btn btn-primary" onclick="loadFromFile()">⬇ Load File</button>
+    </div>
+    <div id="uploadResult" class="mt8"></div>
+  </div>
+
+  <!-- PASTE Panel -->
+  <div id="pn-paste" class="card" style="display:none">
+    <div class="card-hdr"><p class="card-title">📋 Paste Data</p></div>
+    <div class="hint">Paste comma, tab, or semicolon-separated data. First row should be column headers. Columns will be auto-mapped.</div>
+    <div class="g2">
+      <div class="fg">
+        <label class="fl">Dataset Name</label>
+        <input class="fi" id="pasteName" placeholder="e.g. HIV Surveillance Data">
+      </div>
+      <div class="fg">
+        <label class="fl">Delimiter</label>
+        <select class="fi" id="pasteDelim">
+          <option value="auto">Auto-detect</option>
+          <option value=",">Comma</option>
+          <option value="\t">Tab</option>
+          <option value=";">Semicolon</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Data</label>
+      <textarea class="fi" id="pasteArea" rows="8" placeholder="district,period,indicator,value&#10;Zomba,2023Q1,Malaria Cases,4521&#10;Blantyre,2023Q1,Malaria Cases,3812"></textarea>
+    </div>
+    <div class="brow">
+      <button class="btn btn-primary" onclick="loadPaste()">▶ Parse & Load</button>
+      <button class="btn btn-ghost btn-sm" onclick="fillSample()">Load sample data</button>
+    </div>
+    <div id="pasteResult" class="mt8"></div>
+  </div>
+
+  <!-- Loaded Datasets -->
+  <div id="loadedDatasetsCard" class="card" style="display:none">
+    <div class="card-hdr">
+      <p class="card-title">📦 Loaded Datasets</p>
+      <button class="btn btn-ghost btn-sm" onclick="clearAllDatasets()">🗑 Clear all</button>
+    </div>
+    <div id="loadedDatasetsList"></div>
+    <div class="brow">
+      <button class="btn btn-primary" onclick="nav('query')">→ Explore Data</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════ QUERY ══════ -->
+<div class="page" id="page-query">
+<div class="page-inner">
+  <div class="page-hdr fxb">
+    <div>
+      <p class="page-title">Query & Explore</p>
+      <p class="page-sub">Filter, search, and explore your loaded datasets</p>
+    </div>
+    <div class="fxc gap6">
+      <select class="fi" id="qDataset" onchange="populateQueryFilters()" style="width:200px;"></select>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="card-title mb12">🔍 Filters</p>
+    <div id="queryFilters">
+      <div class="hint">Load a dataset first to see filter options.</div>
+    </div>
+    <div class="brow">
+      <button class="btn btn-primary" onclick="runQuery()">▶ Run Query</button>
+      <button class="btn btn-ghost btn-sm" onclick="selAllFilters()">Select all</button>
+      <span id="qCount" class="sm muted"></span>
+    </div>
+  </div>
+
+  <div id="queryResults"></div>
+</div>
+</div>
+
+<!-- ══════ STATS ══════ -->
+<div class="page" id="page-stats">
+<div class="page-inner">
+  <div class="page-hdr">
+    <p class="page-title">Descriptive Statistics</p>
+    <p class="page-sub">Comprehensive summary statistics — mean, median, mode, SD, skewness, kurtosis, and more</p>
+  </div>
+
+  <div class="card">
+    <div class="g3">
+      <div class="fg" style="margin:0">
+        <label class="fl">Dataset</label>
+        <select class="fi" id="statDs" onchange="renderStats()"></select>
+      </div>
+      <div class="fg" style="margin:0">
+        <label class="fl">Group by</label>
+        <select class="fi" id="statGroup" onchange="renderStats()">
+          <option value="auto">Auto (numeric columns)</option>
+          <option value="col">Single column</option>
+        </select>
+      </div>
+      <div class="fg" style="margin:0">
+        <label class="fl">Column (for single)</label>
+        <select class="fi" id="statCol" onchange="renderStats()"><option>—</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div id="statsOut"></div>
+</div>
+</div>
+
+<!-- ══════ INFERENTIAL ══════ -->
+<div class="page" id="page-inference">
+<div class="page-inner">
+  <div class="page-hdr">
+    <p class="page-title">Inferential Statistics</p>
+    <p class="page-sub">Hypothesis testing, chi-square, correlation, linear regression, and more</p>
+  </div>
+
+  <div class="inner-tabs">
+    <div class="inner-tab active" onclick="infTab('ttest')">T-Test</div>
+    <div class="inner-tab" onclick="infTab('chi')">Chi-Square</div>
+    <div class="inner-tab" onclick="infTab('corr')">Correlation</div>
+    <div class="inner-tab" onclick="infTab('reg')">Regression</div>
+    <div class="inner-tab" onclick="infTab('anova')">ANOVA</div>
+  </div>
+
+  <!-- T-TEST -->
+  <div class="inner-pane active" id="inf-ttest">
+    <div class="card">
+      <p class="card-title mb12">📊 Independent Samples T-Test</p>
+      <div class="g3">
+        <div class="fg"><label class="fl">Dataset</label><select class="fi" id="ttDs"></select></div>
+        <div class="fg"><label class="fl">Numeric Column</label><select class="fi" id="ttCol"></select></div>
+        <div class="fg"><label class="fl">Group Column</label><select class="fi" id="ttGroup"></select></div>
+      </div>
+      <div class="brow"><button class="btn btn-primary" onclick="runTTest()">Run T-Test</button></div>
+    </div>
+    <div id="ttOut"></div>
+  </div>
+
+  <!-- CHI-SQUARE -->
+  <div class="inner-pane" id="inf-chi">
+    <div class="card">
+      <p class="card-title mb12">χ² Chi-Square Test of Independence</p>
+      <div class="g3">
+        <div class="fg"><label class="fl">Dataset</label><select class="fi" id="chiDs"></select></div>
+        <div class="fg"><label class="fl">Variable 1 (categorical)</label><select class="fi" id="chiV1"></select></div>
+        <div class="fg"><label class="fl">Variable 2 (categorical)</label><select class="fi" id="chiV2"></select></div>
+      </div>
+      <div class="brow"><button class="btn btn-primary" onclick="runChi()">Run Chi-Square</button></div>
+    </div>
+    <div id="chiOut"></div>
+  </div>
+
+  <!-- CORRELATION -->
+  <div class="inner-pane" id="inf-corr">
+    <div class="card">
+      <p class="card-title mb12">🔗 Pearson Correlation Matrix</p>
+      <div class="g2">
+        <div class="fg"><label class="fl">Dataset</label><select class="fi" id="corrDs" onchange="populateCorrCols()"></select></div>
+        <div class="fg"><label class="fl">Method</label>
+          <select class="fi" id="corrMethod">
+            <option value="pearson">Pearson (continuous)</option>
+            <option value="spearman">Spearman (ranks)</option>
+          </select>
+        </div>
+      </div>
+      <div class="brow"><button class="btn btn-primary" onclick="runCorr()">Compute Correlation Matrix</button></div>
+    </div>
+    <div id="corrOut"></div>
+  </div>
+
+  <!-- REGRESSION -->
+  <div class="inner-pane" id="inf-reg">
+    <div class="card">
+      <p class="card-title mb12">📈 Simple Linear Regression</p>
+      <div class="g3">
+        <div class="fg"><label class="fl">Dataset</label><select class="fi" id="regDs" onchange="populateRegCols()"></select></div>
+        <div class="fg"><label class="fl">Dependent (Y)</label><select class="fi" id="regY"></select></div>
+        <div class="fg"><label class="fl">Independent (X)</label><select class="fi" id="regX"></select></div>
+      </div>
+      <div class="brow"><button class="btn btn-primary" onclick="runRegression()">Run Regression</button></div>
+    </div>
+    <div id="regOut"></div>
+  </div>
+
+  <!-- ANOVA -->
+  <div class="inner-pane" id="inf-anova">
+    <div class="card">
+      <p class="card-title mb12">📐 One-Way ANOVA</p>
+      <div class="g3">
+        <div class="fg"><label class="fl">Dataset</label><select class="fi" id="anovDs"></select></div>
+        <div class="fg"><label class="fl">Numeric Column</label><select class="fi" id="anovVal"></select></div>
+        <div class="fg"><label class="fl">Group Column</label><select class="fi" id="anovGrp"></select></div>
+      </div>
+      <div class="brow"><button class="btn btn-primary" onclick="runANOVA()">Run ANOVA</button></div>
+    </div>
+    <div id="anovaOut"></div>
+  </div>
+
+</div>
+</div>
+
+<!-- ══════ COMPARE ══════ -->
+<div class="page" id="page-compare">
+<div class="page-inner">
+  <div class="page-hdr">
+    <p class="page-title">Compare Datasets</p>
+    <p class="page-sub">Side-by-side comparison of multiple datasets — summary stats, distributions, and visualisations</p>
+  </div>
+
+  <div class="card">
+    <p class="card-title mb12">Select datasets to compare</p>
+    <div id="cmpCheckboxes" class="flex" style="flex-wrap:wrap;gap:8px"></div>
+    <div class="g3 mt12">
+      <div class="fg"><label class="fl">Compare by column</label><select class="fi" id="cmpCol"></select></div>
+      <div class="fg"><label class="fl">Numeric column</label><select class="fi" id="cmpNum"></select></div>
+      <div class="fg"><label class="fl">Chart type</label>
+        <select class="fi" id="cmpChart">
+          <option value="bar">Grouped Bar</option>
+          <option value="line">Line</option>
+          <option value="radar">Radar</option>
+        </select>
+      </div>
+    </div>
+    <div class="brow"><button class="btn btn-primary" onclick="runCompare()">Compare</button></div>
+  </div>
+  <div id="cmpOut"></div>
+</div>
+</div>
+
+<!-- ══════ CLEAN ══════ -->
+<div class="page" id="page-clean">
+<div class="page-inner">
+  <div class="page-hdr">
+    <p class="page-title">Data Quality</p>
+    <p class="page-sub">Audit completeness, detect outliers, and apply automated cleaning</p>
+  </div>
+  <div class="card">
+    <div class="fg"><label class="fl">Dataset</label><select class="fi" id="cleanDs" onchange="renderClean()"></select></div>
+  </div>
+  <div id="cleanOut"></div>
+</div>
+</div>
+
+<!-- ══════ DASHBOARD ══════ -->
+<div class="page" id="page-dashboard">
+<div class="page-inner">
+  <div class="page-hdr fxb">
+    <div>
+      <p class="page-title">Dashboard</p>
+      <p class="page-sub">Interactive charts and visual analytics with AI-powered insights</p>
+    </div>
+    <div class="fxc gap6">
+      <button class="btn btn-ghost btn-sm" onclick="addChart()">＋ Add Chart</button>
+      <button class="btn btn-ghost btn-sm" onclick="renderDashboard()">↺ Refresh</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="g4" style="align-items:end">
+      <div class="fg" style="margin:0"><label class="fl">Dataset</label><select class="fi" id="dashDs" onchange="renderDashboard()"></select></div>
+      <div class="fg" style="margin:0"><label class="fl">Column (X / Category)</label><select class="fi" id="dashX" onchange="renderDashboard()"></select></div>
+      <div class="fg" style="margin:0"><label class="fl">Column (Y / Value)</label><select class="fi" id="dashY" onchange="renderDashboard()"></select></div>
+      <div class="fg" style="margin:0"><label class="fl">Chart type</label>
+        <select class="fi" id="dashType" onchange="renderDashboard()">
+          <option value="bar">Bar</option>
+          <option value="line">Line</option>
+          <option value="doughnut">Donut</option>
+          <option value="scatter">Scatter</option>
+          <option value="horizontalBar">Horizontal Bar</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div id="dashKPIs" class="g4 mb16" style="display:none"></div>
+
+  <div id="dashMain"></div>
+
+  <!-- AI Insight panel -->
+  <div id="dashInsightCard" class="card" style="display:none">
+    <div class="card-hdr">
+      <p class="card-title">🤖 AI Chart Insight</p>
+      <button class="btn btn-primary btn-sm" onclick="aiChartInsight()">Generate Insight</button>
+    </div>
+    <div id="dashInsightOut"></div>
+  </div>
+</div>
+</div>
+
+<!-- ══════ INSIGHTS ══════ -->
+<div class="page" id="page-insights">
+<div class="page-inner">
+  <div class="page-hdr">
+    <p class="page-title">AI Insights</p>
+    <p class="page-sub">Ask Claude to analyse your health data, interpret statistics, and generate evidence-based recommendations</p>
+  </div>
+  <div id="insightsOut"></div>
+</div>
+</div>
+
+</main>
+</div>
+</div>
+
+<!-- AI KEY MODAL -->
+<div class="overlay" id="aiKeyModal" onclick="if(event.target===this)closeModal('aiKeyModal')">
+  <div class="modal">
+    <p class="modal-title">🔑 Anthropic API Key</p>
+    <p class="sm muted mb12">Required for AI Insights and AI Chart Insight. Your key is stored only in your browser (localStorage). Get one free at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+    <div class="fg">
+      <label class="fl">API Key</label>
+      <input type="password" class="fi" id="apiKeyIn" placeholder="sk-ant-api03-…">
+    </div>
+    <div class="brow">
+      <button class="btn btn-primary" onclick="saveKey()">Save Key</button>
+      <button class="btn btn-ghost" onclick="closeModal('aiKeyModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════
+const S = {
+  datasets: {},   // { id: { name, rows, columns, color } }
+  dsCount: 0,
+  apiKey: localStorage.getItem('hb_apikey') || '',
+  charts: {},
+  dashChartCount: 0,
+};
+const DS_COLORS = ['#1D76DB','#1A7F4B','#D4860A','#CF3030','#6E40C9','#DD6B20','#0694A2','#9B1C1C'];
+
+function getDsColor(idx){ return DS_COLORS[idx % DS_COLORS.length]; }
+function dsIds(){ return Object.keys(S.datasets); }
+function dsArr(){ return Object.values(S.datasets); }
+function getDs(id){ return S.datasets[id]; }
+function numCols(rows){ if(!rows||!rows.length)return[]; return Object.keys(rows[0]).filter(k=>rows.some(r=>r[k]!==null&&r[k]!==undefined&&r[k]!=='')&&rows.some(r=>!isNaN(parseFloat(r[k])))); }
+function catCols(rows){ if(!rows||!rows.length)return[]; return Object.keys(rows[0]); }
+function allCols(rows){ return rows&&rows.length?Object.keys(rows[0]):[]; }
+
+// ══════════════════════════════════════════════════
+// PARSING
+// ══════════════════════════════════════════════════
+function parseCSV(text, delim){
+  const d = delim==='auto'?(text.includes('\t')?'\t':text.includes(';')?';':','):delim;
+  const lines = text.trim().split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2)return null;
+  const hdr = lines[0].split(d).map(h=>h.trim().replace(/^"|"$/g,''));
+  return lines.slice(1).map(l=>{
+    const cells = l.split(d).map(c=>c.trim().replace(/^"|"$/g,''));
+    const obj={};
+    hdr.forEach((h,i)=>{ const v=cells[i]??''; const n=parseFloat(v); obj[h]=isNaN(n)?v:n; });
+    return obj;
+  });
+}
+
+function parseJSON(text){
+  try{
+    const d=JSON.parse(text);
+    if(Array.isArray(d))return d;
+    // try to find first array property
+    for(const k of Object.keys(d)){ if(Array.isArray(d[k]))return d[k]; }
+    return null;
+  }catch{return null;}
+}
+
+function detectAndParse(text, fmt){
+  if(fmt==='json'||text.trim().startsWith('[')&&fmt==='auto') return parseJSON(text);
+  if(fmt==='tsv') return parseCSV(text,'\t');
+  return parseCSV(text,'auto');
+}
+
+// ══════════════════════════════════════════════════
+// ADD DATASET
+// ══════════════════════════════════════════════════
+function addDataset(name, rows){
+  if(!rows||!rows.length){ showToast('No data parsed','err'); return null; }
+  const id='ds'+(++S.dsCount);
+  S.datasets[id]={ id, name, rows, color: getDsColor(S.dsCount-1) };
+  refreshAllDropdowns();
+  refreshLoadedPanel();
+  updateConnPill();
+  showToast(`Loaded "${name}" — ${rows.length} records`,'ok');
+  return id;
+}
+
+function clearAllDatasets(){
+  S.datasets={};S.dsCount=0;
+  refreshAllDropdowns();refreshLoadedPanel();updateConnPill();
+  showToast('All datasets cleared','ok');
+}
+
+function removeDs(id){
+  delete S.datasets[id];
+  refreshAllDropdowns();refreshLoadedPanel();updateConnPill();
+  showToast('Dataset removed','ok');
+}
+
+// ══════════════════════════════════════════════════
+// DATA SOURCES
+// ══════════════════════════════════════════════════
+function selectSrc(s){
+  ['url','upload','paste'].forEach(x=>{
+    document.getElementById('sc-'+x).classList.toggle('sel',x===s);
+    document.getElementById('pn-'+x).style.display=x===s?'block':'none';
+  });
+}
+
+function generateQueryCode(){
+  const url=(document.getElementById('dataUrl').value||'').trim();
+  const fmt=document.getElementById('urlFormat').value;
+  if(!url){showToast('Enter a URL first','err');return;}
+  const code=
+`// ── Fetch Open Data: ${url} ──
+// Run in browser console or Node.js (with node-fetch)
+const url = "${url}";
+
+async function loadData() {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("HTTP " + response.status);
+${fmt==='json'||fmt==='auto'?`  // Try JSON first
+  const text = await response.text();
+  try {
+    const json = JSON.parse(text);
+    const rows = Array.isArray(json) ? json : Object.values(json).find(v => Array.isArray(v));
+    console.log("Rows:", rows.length, "Columns:", Object.keys(rows[0]));
+    return rows;
+  } catch {
+    // Fallback to CSV parsing
+    return parseCSV(text);
+  }`:
+`  const text = await response.text();
+  return parseCSV(text);`}
+}
+
+function parseCSV(text, delim=",") {
+  const lines = text.trim().split("\\n");
+  const headers = lines[0].split(delim).map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const cells = line.split(delim).map(c => c.trim());
+    return Object.fromEntries(headers.map((h,i) => [h, cells[i]]));
+  });
+}
+
+loadData().then(data => console.log(data));`;
+
+  document.getElementById('urlCodeArea').value=code;
+  document.getElementById('urlQueryCode').style.display='block';
+  showToast('Query code generated','ok');
+}
+
+function copyCode(){
+  navigator.clipboard.writeText(document.getElementById('urlCodeArea').value).then(()=>showToast('Code copied','ok'));
+}
+
+async function loadFromUrl(){
+  const url=(document.getElementById('dataUrl').value||'').trim();
+  const name=(document.getElementById('urlName').value||url.split('/').pop()||'Remote Data').trim();
+  const fmt=document.getElementById('urlFormat').value;
+  if(!url){showToast('Enter a URL','err');return;}
+  document.getElementById('urlResult').innerHTML='<div class="loading"><div class="spin"></div><span>Fetching data…</span></div>';
+  try{
+    const resp=await fetch(url);
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const text=await resp.text();
+    const rows=detectAndParse(text,fmt);
+    if(!rows)throw new Error('Could not parse response');
+    const id=addDataset(name,rows);
+    document.getElementById('urlResult').innerHTML=`<div class="hint ok">✅ Loaded <strong>${rows.length}</strong> records · <strong>${Object.keys(rows[0]).length}</strong> columns</div>`;
+    if(id)setTimeout(()=>nav('query'),600);
+  }catch(e){
+    document.getElementById('urlResult').innerHTML=`<div class="hint err">❌ Failed: ${e.message}. CORS restrictions may block direct browser requests — try downloading and uploading the file instead.</div>`;
+  }
+}
+
+function fileChosen(inp){
+  const f=inp.files[0];
+  if(!f)return;
+  document.getElementById('uploadName').value=document.getElementById('uploadName').value||f.name.replace(/\.[^.]+$/,'');
+  document.getElementById('uploadPreview').innerHTML=`<div class="hint ok">📄 ${f.name} (${(f.size/1024).toFixed(1)} KB)</div>`;
+}
+
+function loadFromFile(){
+  const f=document.getElementById('fileInput').files[0];
+  const name=(document.getElementById('uploadName').value||'Uploaded Data').trim();
+  if(!f){showToast('Select a file first','err');return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const text=e.target.result;
+    const fmt=f.name.endsWith('.json')?'json':f.name.endsWith('.tsv')?'tsv':'csv';
+    const rows=detectAndParse(text,fmt);
+    if(!rows){document.getElementById('uploadResult').innerHTML='<div class="hint err">❌ Could not parse file</div>';return;}
+    const id=addDataset(name,rows);
+    document.getElementById('uploadResult').innerHTML=`<div class="hint ok">✅ Parsed <strong>${rows.length}</strong> records · <strong>${Object.keys(rows[0]).length}</strong> columns</div>`;
+    if(id)setTimeout(()=>nav('query'),600);
+  };
+  reader.readAsText(f);
+}
+
+function loadPaste(){
+  const raw=(document.getElementById('pasteArea').value||'').trim();
+  const name=(document.getElementById('pasteName').value||'Pasted Data').trim();
+  const delim=document.getElementById('pasteDelim').value;
+  if(!raw){showToast('Paste some data first','err');return;}
+  const rows=parseCSV(raw,delim);
+  if(!rows){document.getElementById('pasteResult').innerHTML='<div class="hint err">❌ Could not parse data</div>';return;}
+  const id=addDataset(name,rows);
+  document.getElementById('pasteResult').innerHTML=`<div class="hint ok">✅ Parsed <strong>${rows.length}</strong> records</div>`;
+  if(id)setTimeout(()=>nav('query'),600);
+}
+
+function fillSample(){
+  document.getElementById('pasteName').value='Malawi Health Demo';
+  document.getElementById('pasteArea').value=
+`district,period,indicator,value
+Zomba,2023Q1,Malaria Cases,4521
+Blantyre,2023Q1,Malaria Cases,3812
+Lilongwe,2023Q1,Malaria Cases,6104
+Mzuzu,2023Q1,Malaria Cases,1187
+Kasungu,2023Q1,Malaria Cases,2745
+Mangochi,2023Q1,Malaria Cases,6980
+Zomba,2023Q2,Malaria Cases,2987
+Blantyre,2023Q2,Malaria Cases,2441
+Lilongwe,2023Q2,Malaria Cases,4823
+Mzuzu,2023Q2,Malaria Cases,834
+Kasungu,2023Q2,Malaria Cases,1901
+Mangochi,2023Q2,Malaria Cases,5211
+Zomba,2023Q1,ANC 1st Visits,2734
+Blantyre,2023Q1,ANC 1st Visits,3021
+Lilongwe,2023Q1,ANC 1st Visits,4987
+Mzuzu,2023Q1,ANC 1st Visits,1320
+Kasungu,2023Q1,ANC 1st Visits,1890
+Mangochi,2023Q1,ANC 1st Visits,2110
+Zomba,2023Q1,HIV Tests,1143
+Blantyre,2023Q1,HIV Tests,1987
+Lilongwe,2023Q1,HIV Tests,3412
+Mzuzu,2023Q1,HIV Tests,870
+Kasungu,2023Q1,HIV Tests,690
+Mangochi,2023Q1,HIV Tests,1050
+Zomba,2023Q1,Deliveries,1755
+Blantyre,2023Q1,Deliveries,2340
+Lilongwe,2023Q1,Deliveries,3821
+Mzuzu,2023Q1,Deliveries,890
+Kasungu,2023Q1,Deliveries,1210
+Mangochi,2023Q1,Deliveries,1480`;
+}
+
+// ══════════════════════════════════════════════════
+// LOADED PANEL
+// ══════════════════════════════════════════════════
+function refreshLoadedPanel(){
+  const ids=dsIds();
+  const card=document.getElementById('loadedDatasetsCard');
+  const list=document.getElementById('loadedDatasetsList');
+  card.style.display=ids.length?'block':'none';
+  list.innerHTML=ids.map(id=>{
+    const ds=getDs(id);
+    const cols=allCols(ds.rows);
+    return `<div class="ds-panel mb8">
+      <div class="ds-panel-row">
+        <div class="fxc gap6">
+          <span style="width:9px;height:9px;border-radius:50%;background:${ds.color};display:inline-block;flex-shrink:0"></span>
+          <span class="ds-name">${ds.name}</span>
+          <span class="ds-meta">${ds.rows.length} rows · ${cols.length} cols</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="removeDs('${id}')">✕</button>
+      </div>
+      <div class="mt4 sm muted">${cols.slice(0,8).join(', ')}${cols.length>8?' …':''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════
+// DROPDOWNS — refresh all dataset selects
+// ══════════════════════════════════════════════════
+const DS_SELECT_IDS=['qDataset','statDs','ttDs','chiDs','corrDs','regDs','anovDs','cleanDs','dashDs','cmpCheckboxes'];
+
+function refreshAllDropdowns(){
+  const ids=dsIds();
+  const opts=ids.map(id=>`<option value="${id}">${getDs(id).name}</option>`).join('')||'<option value="">— No datasets loaded —</option>';
+  ['qDataset','statDs','ttDs','chiDs','corrDs','regDs','anovDs','cleanDs','dashDs'].forEach(sel=>{
+    const el=document.getElementById(sel);
+    if(!el)return;
+    el.innerHTML=opts;
+  });
+  // compare checkboxes
+  const cmpEl=document.getElementById('cmpCheckboxes');
+  if(cmpEl) cmpEl.innerHTML=ids.map(id=>`<label class="fxc gap6 sm" style="cursor:pointer;padding:4px 8px;border:1px solid #D9E2EC;border-radius:5px;background:white">
+    <input type="checkbox" value="${id}" checked onchange="updateCmpCols()">
+    <span style="width:8px;height:8px;border-radius:50%;background:${getDs(id).color};display:inline-block"></span>
+    ${getDs(id).name}
+  </label>`).join('');
+  updateCmpCols();
+  // refresh col dropdowns for active dataset
+  populateQueryFilters();
+  populateDashCols();
+  populateInferenceCols();
+  populateStatCols();
+}
+
+// ══════════════════════════════════════════════════
+// QUERY
+// ══════════════════════════════════════════════════
+let qFiltersState={};
+
+function populateQueryFilters(){
+  const dsId=document.getElementById('qDataset')?.value;
+  const ds=getDs(dsId);
+  const el=document.getElementById('queryFilters');
+  if(!el)return;
+  if(!ds){el.innerHTML='<div class="hint">Load a dataset first.</div>';return;}
+  const cols=allCols(ds.rows);
+  const catC=cols.filter(c=>ds.rows.some(r=>isNaN(parseFloat(r[c]))||r[c]==='')).slice(0,6);
+  if(!catC.length){el.innerHTML='<div class="hint ok">No categorical columns for filtering — use the table view below.</div>';return;}
+  el.innerHTML=catC.map(c=>{
+    const vals=[...new Set(ds.rows.map(r=>String(r[c]||'')).filter(Boolean))].sort();
+    return `<div class="fg"><label class="fl">${c}</label>
+      <select class="fi" id="qf_${c}" multiple size="${Math.min(vals.length,5)}" style="height:auto">
+        ${vals.map(v=>`<option value="${v}" selected>${v}</option>`).join('')}
+      </select></div>`;
+  }).join('');
+}
+
+function selAllFilters(){
+  document.querySelectorAll('[id^="qf_"]').forEach(sel=>Array.from(sel.options).forEach(o=>o.selected=true));
+}
+
+function runQuery(){
+  const dsId=document.getElementById('qDataset')?.value;
+  const ds=getDs(dsId);
+  const el=document.getElementById('queryResults');
+  if(!ds){el.innerHTML=noData();return;}
+  const cols=allCols(ds.rows);
+  const catC=cols.filter(c=>ds.rows.some(r=>isNaN(parseFloat(r[c]))||r[c]===''));
+  let rows=[...ds.rows];
+  catC.forEach(c=>{
+    const sel=document.getElementById('qf_'+c);
+    if(!sel)return;
+    const vals=Array.from(sel.selectedOptions).map(o=>o.value);
+    if(vals.length)rows=rows.filter(r=>vals.includes(String(r[c]||'')));
+  });
+  document.getElementById('qCount').textContent=rows.length+' records';
+  renderTable(rows,cols,'queryResults',dsId);
+}
+
+function renderTable(rows,cols,containerId,dsId){
+  const el=document.getElementById(containerId);
+  if(!rows.length){el.innerHTML='<div class="empty"><div class="empty-ic">🔍</div><p class="empty-title">No matching records</p><p class="empty-desc">Adjust your filters</p></div>';return;}
+  const preview=rows.slice(0,500);
+  const ds=getDs(dsId);
+  el.innerHTML=`<div class="card">
+    <div class="fxb mb8">
+      <p class="card-title" style="margin:0">Results <span class="bdg binfo">${rows.length}</span></p>
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV(${JSON.stringify(rows).replace(/"/g,'&quot;')})">⬇ Export CSV</button>
+    </div>
+    <div class="tw">
+      <table class="dt">
+        <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${preview.map(r=>`<tr>${cols.map(c=>`<td class="${typeof r[c]==='number'?'mono':''}">${r[c]??''}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table>
+    </div>
+    ${rows.length>500?`<p class="sm muted mt8">Showing 500 of ${rows.length} — export for full dataset.</p>`:''}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════
+// STATS UTILS
+// ══════════════════════════════════════════════════
+function calcStats(vals){
+  const v=vals.filter(x=>x!==null&&x!==undefined&&!isNaN(x)).map(Number);
+  if(v.length<2)return null;
+  const n=v.length;
+  const sum=v.reduce((a,b)=>a+b,0);
+  const mean=sum/n;
+  const sorted=[...v].sort((a,b)=>a-b);
+  const median=n%2===0?(sorted[n/2-1]+sorted[n/2])/2:sorted[Math.floor(n/2)];
+  const freq={};v.forEach(x=>{freq[x]=(freq[x]||0)+1;});
+  const maxF=Math.max(...Object.values(freq));
+  const mode=parseFloat(Object.keys(freq).find(k=>freq[k]===maxF));
+  const variance=v.reduce((s,x)=>s+Math.pow(x-mean,2),0)/(n-1);
+  const sd=Math.sqrt(variance);
+  const cv=mean!==0?Math.abs(sd/mean*100):0;
+  const q1=sorted[Math.floor(n/4)];
+  const q3=sorted[Math.floor(3*n/4)];
+  const iqr=q3-q1;
+  const min=sorted[0];const max=sorted[n-1];const range=max-min;
+  const skew=n>=3?v.reduce((s,x)=>s+Math.pow((x-mean)/sd,3),0)/n:0;
+  const kurt=n>=4?v.reduce((s,x)=>s+Math.pow((x-mean)/sd,4),0)/n-3:0;
+  const se=sd/Math.sqrt(n);
+  return {n,sum,mean,median,mode,variance,sd,cv,q1,q3,iqr,min,max,range,skew,kurt,se};
+}
+
+function fmt(v,dp=2){if(v===null||v===undefined||isNaN(v))return'—';return Number(v).toLocaleString(undefined,{maximumFractionDigits:dp,minimumFractionDigits:0});}
+
+function skewLabel(s){
+  if(Math.abs(s)<0.5)return'Symmetric';
+  if(s>0)return s>1?'Strong right skew':'Moderate right skew';
+  return s<-1?'Strong left skew':'Moderate left skew';
+}
+
+// ══════════════════════════════════════════════════
+// DESCRIPTIVE STATS
+// ══════════════════════════════════════════════════
+function populateStatCols(){
+  const dsId=document.getElementById('statDs')?.value;
+  const ds=getDs(dsId);
+  const nc=ds?numCols(ds.rows):[];
+  const el=document.getElementById('statCol');
+  if(el)el.innerHTML=nc.map(c=>`<option>${c}</option>`).join('')||'<option>—</option>';
+}
+
+function renderStats(){
+  const dsId=document.getElementById('statDs')?.value;
+  const ds=getDs(dsId);
+  const el=document.getElementById('statsOut');
+  if(!ds){el.innerHTML=noData();return;}
+  const grp=document.getElementById('statGroup')?.value;
+  const colF=document.getElementById('statCol')?.value;
+  const nc=numCols(ds.rows);
+  populateStatCols();
+  if(!nc.length){el.innerHTML='<div class="hint warn">No numeric columns found in this dataset.</div>';return;}
+  const cols=grp==='col'&&colF&&colF!=='—'?[colF]:nc;
+  const overall=calcStats(cols.flatMap(c=>ds.rows.map(r=>r[c]).filter(v=>v!==null&&!isNaN(v))));
+  const computed=cols.map(c=>({col:c,stats:calcStats(ds.rows.map(r=>r[c]).filter(v=>v!==null&&!isNaN(v)))})).filter(x=>x.stats);
+  const maxMean=Math.max(...computed.map(x=>x.stats.mean));
+  let html='';
+  if(overall){html+=`<div class="g5 mb16">${[
+    ['Observations',overall.n.toLocaleString(),overall.n>30?'good':'warn',''],
+    ['Overall Mean',fmt(overall.mean),'','SD ± '+fmt(overall.sd)],
+    ['Overall Median',fmt(overall.median),'','IQR: '+fmt(overall.q1)+' – '+fmt(overall.q3)],
+    ['CV %',fmt(overall.cv)+'%',overall.cv<15?'good':overall.cv<35?'warn':'bad','Variability'],
+    ['Std Error',fmt(overall.se),'','n='+overall.n]
+  ].map(([l,v,cls,sub])=>`<div class="kpi ${cls}"><div class="kpi-label">${l}</div><div class="kpi-val">${v}</div>${sub?`<div class="kpi-sub">${sub}</div>`:''}</div>`).join('')}</div>`;}
+
+  html+=`<div class="card mb16">
+    <div class="card-hdr"><p class="card-title">📐 Full Descriptive Statistics</p>
+      <button class="btn btn-ghost btn-sm" onclick="dlStatCSV()">⬇ CSV</button></div>
+    <div class="tw"><table class="dt" id="statsTable">
+      <thead><tr><th>Column</th><th>N</th><th>Sum</th><th>Mean</th><th>Median</th><th>Mode</th><th>Std Dev</th><th>Variance</th><th>CV%</th><th>SE</th><th>Min</th><th>Q1</th><th>Q3</th><th>Max</th><th>IQR</th><th>Skewness</th><th>Kurtosis</th></tr></thead>
+      <tbody>${computed.map(({col,stats:s})=>`<tr>
+        <td class="bold">${col}</td>
+        <td class="mono">${s.n}</td>
+        <td class="mono">${fmt(s.sum,0)}</td>
+        <td class="mono bold">${fmt(s.mean)}</td>
+        <td class="mono">${fmt(s.median)}</td>
+        <td class="mono">${fmt(s.mode,0)}</td>
+        <td class="mono">${fmt(s.sd)}</td>
+        <td class="mono">${fmt(s.variance,0)}</td>
+        <td class="mono ${s.cv>50?'out-cell':''}">${fmt(s.cv)}%</td>
+        <td class="mono">${fmt(s.se)}</td>
+        <td class="mono">${fmt(s.min,0)}</td>
+        <td class="mono">${fmt(s.q1,0)}</td>
+        <td class="mono">${fmt(s.q3,0)}</td>
+        <td class="mono">${fmt(s.max,0)}</td>
+        <td class="mono">${fmt(s.iqr,0)}</td>
+        <td>${skewLabel(s.skew)}</td>
+        <td class="mono">${fmt(s.kurt)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div></div>`;
+
+  // Mean comparison bars
+  html+=`<div class="card mb16"><p class="card-title mb12">📊 Mean Comparison</p>
+    <div style="display:flex;flex-direction:column;gap:9px">${computed.map(({col,stats:s})=>{
+      const pct=maxMean>0?(s.mean/maxMean*100).toFixed(1):0;
+      return `<div><div class="fxb sm mb4">
+        <span class="muted">${col}</span>
+        <span class="mono bold">${fmt(s.mean)} <span class="muted" style="font-weight:400">± ${fmt(s.sd)}</span></span></div>
+        <div class="prog"><div class="prog-f ok" style="width:${pct}%"></div></div></div>`;
+    }).join('')}</div></div>`;
+
+  el.innerHTML=html;
+}
+
+let _statRows=[];
+function dlStatCSV(){
+  const dsId=document.getElementById('statDs')?.value;
+  const ds=getDs(dsId);
+  if(!ds)return;
+  const nc=numCols(ds.rows);
+  const rows=nc.map(c=>({col:c,stats:calcStats(ds.rows.map(r=>r[c]).filter(v=>!isNaN(v)&&v!==null))})).filter(x=>x.stats);
+  const hdr='Column,N,Sum,Mean,Median,Mode,StdDev,Variance,CV_pct,SE,Min,Q1,Q3,Max,IQR,Skewness,Kurtosis';
+  const body=rows.map(({col,stats:s})=>[col,s.n,fmt(s.sum,0),fmt(s.mean),fmt(s.median),fmt(s.mode,0),fmt(s.sd),fmt(s.variance,0),fmt(s.cv),fmt(s.se),fmt(s.min,0),fmt(s.q1,0),fmt(s.q3,0),fmt(s.max,0),fmt(s.iqr,0),skewLabel(s.skew),fmt(s.kurt)].join(',')).join('\n');
+  dlFile(hdr+'\n'+body,'stats.csv','text/csv');
+}
+
+// ══════════════════════════════════════════════════
+// INFERENTIAL STATS
+// ══════════════════════════════════════════════════
+function infTab(id){
+  document.querySelectorAll('.inner-tab').forEach((t,i)=>{
+    const tabs=['ttest','chi','corr','reg','anova'];
+    t.classList.toggle('active',tabs[i]===id);
+  });
+  document.querySelectorAll('.inner-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('inf-'+id).classList.add('active');
+  populateInferenceCols();
+}
+
+function populateInferenceCols(){
+  const inferences=[
+    {ds:'ttDs',num:'ttCol',cat:'ttGroup'},
+    {ds:'chiDs',cat1:'chiV1',cat2:'chiV2'},
+    {ds:'corrDs'},
+    {ds:'regDs',num1:'regY',num2:'regX'},
+    {ds:'anovDs',num:'anovVal',cat:'anovGrp'},
+  ];
+  inferences.forEach(inf=>{
+    const dsId=document.getElementById(inf.ds)?.value;
+    const ds=getDs(dsId);
+    if(!ds)return;
+    const nc=numCols(ds.rows);
+    const cc=allCols(ds.rows);
+    if(inf.num){const el=document.getElementById(inf.num);if(el)el.innerHTML=nc.map(c=>`<option>${c}</option>`).join('');}
+    if(inf.num1){const el=document.getElementById(inf.num1);if(el)el.innerHTML=nc.map(c=>`<option>${c}</option>`).join('');}
+    if(inf.num2){const el=document.getElementById(inf.num2);if(el)el.innerHTML=nc.map(c=>`<option>${c}</option>`).join('');}
+    if(inf.cat){const el=document.getElementById(inf.cat);if(el)el.innerHTML=cc.map(c=>`<option>${c}</option>`).join('');}
+    if(inf.cat1){const el=document.getElementById(inf.cat1);if(el)el.innerHTML=cc.map(c=>`<option>${c}</option>`).join('');}
+    if(inf.cat2){const el=document.getElementById(inf.cat2);if(el)el.innerHTML=cc.map(c=>`<option>${c}</option>`).join('');}
+  });
+}
+
+// T-distribution approximation (Welch's)
+function tDistPValue(t,df){
+  // Student t-dist p-value two-tailed approximation using Abramowitz & Stegun
+  const x=df/(df+t*t);
+  const a=0.5*incompleteBeta(x,df/2,0.5);
+  return Math.min(2*a,1);
+}
+function incompleteBeta(x,a,b){
+  // Simple regularized incomplete beta via continued fraction (few terms)
+  if(x<=0)return 0; if(x>=1)return 1;
+  const lbeta=lgamma(a)+lgamma(b)-lgamma(a+b);
+  const coef=Math.exp(a*Math.log(x)+b*Math.log(1-x)-lbeta)/a;
+  let bt=0,c=1,d=1/(1-((a+b)*x/(a+1))),h=d;
+  for(let m=1;m<=40;m++){
+    let md=m,nm,dm;
+    nm=md*(b-md)*x/((a+2*md-1)*(a+2*md));
+    d=1+nm*d;if(Math.abs(d)<1e-30)d=1e-30;
+    c=1+nm/c;if(Math.abs(c)<1e-30)c=1e-30;
+    d=1/d;h*=d*c;
+    nm=-(a+md)*(a+b+md)*x/((a+2*md)*(a+2*md+1));
+    d=1+nm*d;if(Math.abs(d)<1e-30)d=1e-30;
+    c=1+nm/c;if(Math.abs(c)<1e-30)c=1e-30;
+    d=1/d;const del=d*c;h*=del;
+    if(Math.abs(del-1)<1e-8)break;
+  }
+  return coef*h;
+}
+function lgamma(z){
+  // Lanczos
+  const g=7,c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if(z<0.5)return Math.log(Math.PI/Math.sin(Math.PI*z))-lgamma(1-z);
+  z--;let x=c[0];for(let i=1;i<g+2;i++)x+=c[i]/(z+i);
+  const t=z+g+0.5;
+  return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);
+}
+
+function runTTest(){
+  const dsId=document.getElementById('ttDs').value;
+  const ds=getDs(dsId);
+  const numC=document.getElementById('ttCol').value;
+  const grpC=document.getElementById('ttGroup').value;
+  const el=document.getElementById('ttOut');
+  if(!ds){el.innerHTML=noData();return;}
+  const groups={};
+  ds.rows.forEach(r=>{ const g=String(r[grpC]);const v=parseFloat(r[numC]);if(!isNaN(v)){groups[g]=groups[g]||[];groups[g].push(v);}});
+  const keys=Object.keys(groups);
+  if(keys.length<2){el.innerHTML='<div class="hint warn">Need at least 2 distinct groups in the group column.</div>';return;}
+  const pairs=[];
+  for(let i=0;i<keys.length;i++)for(let j=i+1;j<keys.length;j++)pairs.push([keys[i],keys[j]]);
+  let html='';
+  pairs.slice(0,6).forEach(([a,b])=>{
+    const va=groups[a],vb=groups[b];
+    const na=va.length,nb=vb.length;
+    const ma=va.reduce((s,x)=>s+x,0)/na,mb=vb.reduce((s,x)=>s+x,0)/nb;
+    const sa2=va.reduce((s,x)=>s+Math.pow(x-ma,2),0)/(na-1),sb2=vb.reduce((s,x)=>s+Math.pow(x-mb,2),0)/(nb-1);
+    const se=Math.sqrt(sa2/na+sb2/nb);
+    const t=(ma-mb)/se;
+    const df=Math.pow(sa2/na+sb2/nb,2)/(Math.pow(sa2/na,2)/(na-1)+Math.pow(sb2/nb,2)/(nb-1));
+    const p=tDistPValue(Math.abs(t),df);
+    const sig=p<0.05;
+    html+=`<div class="card mb12">
+      <p class="card-title">${numC}: ${a} vs ${b}</p>
+      <div class="g4 mb12">
+        <div class="kpi"><div class="kpi-label">${a} Mean</div><div class="kpi-val">${fmt(ma)}</div><div class="kpi-sub">n=${na}</div></div>
+        <div class="kpi"><div class="kpi-label">${b} Mean</div><div class="kpi-val">${fmt(mb)}</div><div class="kpi-sub">n=${nb}</div></div>
+        <div class="kpi"><div class="kpi-label">t-statistic</div><div class="kpi-val">${fmt(t,3)}</div><div class="kpi-sub">df=${fmt(df,1)}</div></div>
+        <div class="kpi ${sig?'bad':'good'}"><div class="kpi-label">p-value</div><div class="kpi-val">${p<0.001?'<0.001':fmt(p,4)}</div><div class="kpi-sub">${sig?'Significant ✓':'Not significant'}</div></div>
+      </div>
+      <div class="reg-box sm">${sig?`✅ Significant difference: ${a} (M=${fmt(ma)}) vs ${b} (M=${fmt(mb)}), t(${fmt(df,1)})=${fmt(t,3)}, p=${p<0.001?'<0.001':fmt(p,4)}. The means differ significantly at α=0.05.`:`⬜ No significant difference: ${a} (M=${fmt(ma)}) vs ${b} (M=${fmt(mb)}), t(${fmt(df,1)})=${fmt(t,3)}, p=${fmt(p,4)}. Insufficient evidence to reject H₀.`}</div>
+    </div>`;
+  });
+  el.innerHTML=html;
+}
+
+function runChi(){
+  const dsId=document.getElementById('chiDs').value;
+  const ds=getDs(dsId);
+  const v1=document.getElementById('chiV1').value;
+  const v2=document.getElementById('chiV2').value;
+  const el=document.getElementById('chiOut');
+  if(!ds){el.innerHTML=noData();return;}
+  // Build contingency table
+  const cats1=[...new Set(ds.rows.map(r=>String(r[v1]||'')))].filter(Boolean).sort();
+  const cats2=[...new Set(ds.rows.map(r=>String(r[v2]||'')))].filter(Boolean).sort();
+  if(cats1.length<2||cats2.length<2){el.innerHTML='<div class="hint warn">Need at least 2 categories in each variable.</div>';return;}
+  const observed=cats1.map(c1=>cats2.map(c2=>ds.rows.filter(r=>String(r[v1]||'')===c1&&String(r[v2]||'')===c2).length));
+  const rowTotals=observed.map(row=>row.reduce((a,b)=>a+b,0));
+  const colTotals=cats2.map((_,j)=>observed.reduce((s,row)=>s+row[j],0));
+  const N=rowTotals.reduce((a,b)=>a+b,0);
+  if(N===0){el.innerHTML='<div class="hint warn">No data matching these variables.</div>';return;}
+  const expected=cats1.map((_,i)=>cats2.map((_,j)=>rowTotals[i]*colTotals[j]/N));
+  let chi2=0;
+  observed.forEach((row,i)=>row.forEach((o,j)=>{const e=expected[i][j];if(e>0)chi2+=Math.pow(o-e,2)/e;}));
+  const df=(cats1.length-1)*(cats2.length-1);
+  // Chi2 p-value approx using incomplete gamma
+  const p=1-chi2CDF(chi2,df);
+  const cramers=Math.sqrt(chi2/(N*Math.min(cats1.length-1,cats2.length-1)));
+  const sig=p<0.05;
+  el.innerHTML=`<div class="card">
+    <p class="card-title mb12">χ² Test: ${v1} × ${v2}</p>
+    <div class="g4 mb14">
+      <div class="kpi"><div class="kpi-label">χ² Statistic</div><div class="kpi-val">${fmt(chi2,3)}</div></div>
+      <div class="kpi"><div class="kpi-label">df</div><div class="kpi-val">${df}</div></div>
+      <div class="kpi ${sig?'bad':'good'}"><div class="kpi-label">p-value</div><div class="kpi-val">${p<0.001?'<0.001':fmt(p,4)}</div></div>
+      <div class="kpi"><div class="kpi-label">Cramér's V</div><div class="kpi-val">${fmt(cramers,3)}</div><div class="kpi-sub">${cramers<0.1?'Negligible':cramers<0.3?'Small':cramers<0.5?'Moderate':'Strong'} effect</div></div>
+    </div>
+    <div class="reg-box sm mb14">${sig?`✅ Significant association between ${v1} and ${v2}: χ²(${df})=${fmt(chi2,3)}, p=${p<0.001?'<0.001':fmt(p,4)}, Cramér's V=${fmt(cramers,3)}. Reject H₀.`:`⬜ No significant association between ${v1} and ${v2}: χ²(${df})=${fmt(chi2,3)}, p=${fmt(p,4)}. Fail to reject H₀.`}</div>
+    <p class="card-title mb8" style="font-size:12px">Observed Frequencies</p>
+    <div class="tw"><table class="dt">
+      <thead><tr><th>${v1} \\ ${v2}</th>${cats2.map(c=>`<th>${c}</th>`).join('')}<th>Total</th></tr></thead>
+      <tbody>${cats1.map((c1,i)=>`<tr><td class="bold">${c1}</td>${cats2.map((_,j)=>`<td class="mono">${observed[i][j]}</td>`).join('')}<td class="mono bold">${rowTotals[i]}</td></tr>`).join('')}
+      <tr><td class="bold">Total</td>${colTotals.map(t=>`<td class="mono bold">${t}</td>`).join('')}<td class="mono bold">${N}</td></tr></tbody>
+    </table></div>
+  </div>`;
+}
+
+function chi2CDF(x,k){
+  // Regularized incomplete gamma P(k/2, x/2)
+  return gammainc(k/2,x/2);
+}
+function gammainc(a,x){
+  // Series expansion
+  if(x<0)return 0;
+  if(x===0)return 0;
+  let s=1/a,t=1/a,n=1;
+  while(n<150&&Math.abs(t)>1e-8*Math.abs(s)){t*=x/(a+n);s+=t;n++;}
+  return s*Math.exp(-x+a*Math.log(x)-lgamma(a));
+}
+
+function populateCorrCols(){
+  const dsId=document.getElementById('corrDs')?.value;
+  const ds=getDs(dsId);
+  // no additional action needed for correlation — it auto-uses all numeric
+}
+
+function runCorr(){
+  const dsId=document.getElementById('corrDs').value;
+  const ds=getDs(dsId);
+  const method=document.getElementById('corrMethod').value;
+  const el=document.getElementById('corrOut');
+  if(!ds){el.innerHTML=noData();return;}
+  const nc=numCols(ds.rows);
+  if(nc.length<2){el.innerHTML='<div class="hint warn">Need at least 2 numeric columns.</div>';return;}
+  // Spearman = rank then Pearson
+  const getData=c=>ds.rows.map(r=>r[c]).filter(v=>!isNaN(v)&&v!==null);
+  const rank=arr=>{const s=[...arr].map((v,i)=>({v,i})).sort((a,b)=>a.v-b.v);const r=new Array(arr.length);s.forEach((x,ri)=>r[x.i]=ri+1);return r;};
+  const pearson=(a,b)=>{const n=Math.min(a.length,b.length);const ma=a.slice(0,n).reduce((s,x)=>s+x,0)/n,mb=b.slice(0,n).reduce((s,x)=>s+x,0)/n;let num=0,sa=0,sb=0;for(let i=0;i<n;i++){num+=(a[i]-ma)*(b[i]-mb);sa+=Math.pow(a[i]-ma,2);sb+=Math.pow(b[i]-mb,2);}return num/Math.sqrt(sa*sb)||0;};
+  const matrix=nc.map(c1=>nc.map(c2=>{
+    let a=getData(c1),b=getData(c2);
+    const n=Math.min(a.length,b.length);a=a.slice(0,n);b=b.slice(0,n);
+    if(method==='spearman'){a=rank(a);b=rank(b);}
+    return pearson(a,b);
+  }));
+  const colorCell=r=>{const v=Math.abs(r);const c=r>=0?'var(--jade)':'var(--crimson)';const a=v.toFixed(3);if(r===1)return `<td class="mono" style="background:#f0f9f4;font-weight:700">1.000</td>`;return `<td class="mono ${Math.abs(r)>=0.5?'bold':''}" style="background:${r>=0?`rgba(26,127,75,${v*0.25})`:`rgba(207,48,48,${v*0.25})`};color:${Math.abs(r)>=0.5?c:'inherit'}">${a}</td>`;};
+  el.innerHTML=`<div class="card">
+    <p class="card-title mb12">${method==='spearman'?'Spearman Rank':'Pearson'} Correlation Matrix</p>
+    <div class="hint">Values close to +1 = strong positive correlation; close to −1 = strong negative; close to 0 = no linear relationship.</div>
+    <div class="tw"><table class="dt">
+      <thead><tr><th></th>${nc.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+      <tbody>${nc.map((c,i)=>`<tr><td class="bold sm">${c}</td>${matrix[i].map(r=>colorCell(r)).join('')}</tr>`).join('')}</tbody>
+    </table></div></div>`;
+}
+
+function populateRegCols(){
+  const dsId=document.getElementById('regDs')?.value;
+  const ds=getDs(dsId);
+  const nc=ds?numCols(ds.rows):[];
+  ['regY','regX'].forEach(sel=>{const el=document.getElementById(sel);if(el)el.innerHTML=nc.map(c=>`<option>${c}</option>`).join('');});
+  if(nc.length>1&&document.getElementById('regX'))document.getElementById('regX').selectedIndex=1;
+}
+
+function runRegression(){
+  const dsId=document.getElementById('regDs').value;
+  const ds=getDs(dsId);
+  const yCol=document.getElementById('regY').value;
+  const xCol=document.getElementById('regX').value;
+  const el=document.getElementById('regOut');
+  if(!ds){el.innerHTML=noData();return;}
+  const pairs=ds.rows.map(r=>({x:parseFloat(r[xCol]),y:parseFloat(r[yCol])})).filter(p=>!isNaN(p.x)&&!isNaN(p.y));
+  const n=pairs.length;
+  if(n<3){el.innerHTML='<div class="hint warn">Need at least 3 valid data pairs.</div>';return;}
+  const mx=pairs.reduce((s,p)=>s+p.x,0)/n,my=pairs.reduce((s,p)=>s+p.y,0)/n;
+  const sxy=pairs.reduce((s,p)=>s+(p.x-mx)*(p.y-my),0);
+  const sxx=pairs.reduce((s,p)=>s+Math.pow(p.x-mx,2),0);
+  const slope=sxy/sxx,intercept=my-slope*mx;
+  const yHat=pairs.map(p=>slope*p.x+intercept);
+  const ssTot=pairs.reduce((s,p)=>s+Math.pow(p.y-my,2),0);
+  const ssRes=pairs.reduce((s,p,i)=>s+Math.pow(p.y-yHat[i],2),0);
+  const r2=1-ssRes/ssTot;
+  const r=Math.sqrt(Math.abs(r2))*Math.sign(slope);
+  const mse=ssRes/(n-2);
+  const seb=Math.sqrt(mse/sxx);
+  const t=slope/seb;
+  const p=tDistPValue(Math.abs(t),n-2);
+  const sig=p<0.05;
+  el.innerHTML=`<div class="card">
+    <p class="card-title mb12">Regression: ${yCol} ~ ${xCol}</p>
+    <div class="g4 mb14">
+      <div class="kpi"><div class="kpi-label">Slope (β₁)</div><div class="kpi-val">${fmt(slope,4)}</div></div>
+      <div class="kpi"><div class="kpi-label">Intercept (β₀)</div><div class="kpi-val">${fmt(intercept,4)}</div></div>
+      <div class="kpi"><div class="kpi-label">R²</div><div class="kpi-val">${fmt(r2,4)}</div><div class="kpi-sub">${(r2*100).toFixed(1)}% variance explained</div></div>
+      <div class="kpi ${sig?'good':'warn'}"><div class="kpi-label">p-value</div><div class="kpi-val">${p<0.001?'<0.001':fmt(p,4)}</div><div class="kpi-sub">${sig?'Significant':'Not significant'}</div></div>
+    </div>
+    <div class="reg-box mb14">Equation:  ${yCol} = ${fmt(slope,4)} × ${xCol} + ${fmt(intercept,4)}
+R = ${fmt(r,4)}  |  R² = ${fmt(r2,4)}  |  t(${n-2}) = ${fmt(t,3)}  |  p = ${p<0.001?'<0.001':fmt(p,4)}
+n = ${n}  |  MSE = ${fmt(mse,2)}  |  SE(β₁) = ${fmt(seb,4)}
+
+${sig?`✅ Significant linear relationship: for every 1-unit increase in ${xCol}, ${yCol} changes by ${fmt(slope,3)} units. The model explains ${(r2*100).toFixed(1)}% of variance.`:`⬜ No significant linear relationship detected at α=0.05. Consider non-linear models or confounders.`}</div>
+    <div style="position:relative;height:260px"><canvas id="regChart"></canvas></div>
+  </div>`;
+  setTimeout(()=>{
+    destroyChart('regChart');
+    const ctx=document.getElementById('regChart');if(!ctx)return;
+    const sorted=[...pairs].sort((a,b)=>a.x-b.x);
+    S.charts['regChart']=new Chart(ctx,{type:'scatter',data:{
+      datasets:[
+        {label:'Data',data:pairs.map(p=>({x:p.x,y:p.y})),backgroundColor:'#1D76DB99',pointRadius:4},
+        {label:'Regression line',data:sorted.map(p=>({x:p.x,y:slope*p.x+intercept})),type:'line',borderColor:'#CF3030',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:0}
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'DM Sans',size:11}}}},scales:{x:{title:{display:true,text:xCol}},y:{title:{display:true,text:yCol}}}}});
+  },60);
+}
+
+function runANOVA(){
+  const dsId=document.getElementById('anovDs').value;
+  const ds=getDs(dsId);
+  const valC=document.getElementById('anovVal').value;
+  const grpC=document.getElementById('anovGrp').value;
+  const el=document.getElementById('anovaOut');
+  if(!ds){el.innerHTML=noData();return;}
+  const groups={};
+  ds.rows.forEach(r=>{const g=String(r[grpC]);const v=parseFloat(r[valC]);if(!isNaN(v)){groups[g]=groups[g]||[];groups[g].push(v);}});
+  const keys=Object.keys(groups);
+  if(keys.length<2){el.innerHTML='<div class="hint warn">Need at least 2 groups.</div>';return;}
+  const allVals=keys.flatMap(k=>groups[k]);
+  const N=allVals.length,k=keys.length;
+  const grandMean=allVals.reduce((s,x)=>s+x,0)/N;
+  const ssBetween=keys.reduce((s,g)=>{const m=groups[g].reduce((a,b)=>a+b,0)/groups[g].length;return s+groups[g].length*Math.pow(m-grandMean,2);},0);
+  const ssWithin=keys.reduce((s,g)=>{const m=groups[g].reduce((a,b)=>a+b,0)/groups[g].length;return s+groups[g].reduce((a,x)=>a+Math.pow(x-m,2),0);},0);
+  const dfBetween=k-1,dfWithin=N-k;
+  const msBetween=ssBetween/dfBetween,msWithin=ssWithin/dfWithin;
+  const F=msBetween/msWithin;
+  // F-dist p-value approximation
+  const p=1-fCDF(F,dfBetween,dfWithin);
+  const sig=p<0.05;
+  const eta2=ssBetween/(ssBetween+ssWithin);
+  el.innerHTML=`<div class="card">
+    <p class="card-title mb12">One-Way ANOVA: ${valC} by ${grpC}</p>
+    <div class="g5 mb14">
+      <div class="kpi"><div class="kpi-label">F-statistic</div><div class="kpi-val">${fmt(F,3)}</div></div>
+      <div class="kpi"><div class="kpi-label">df (between/within)</div><div class="kpi-val">${dfBetween}/${dfWithin}</div></div>
+      <div class="kpi ${sig?'bad':'good'}"><div class="kpi-label">p-value</div><div class="kpi-val">${p<0.001?'<0.001':fmt(p,4)}</div></div>
+      <div class="kpi"><div class="kpi-label">η² (effect size)</div><div class="kpi-val">${fmt(eta2,3)}</div><div class="kpi-sub">${eta2<0.01?'Small':eta2<0.06?'Medium':'Large'}</div></div>
+      <div class="kpi"><div class="kpi-label">Groups</div><div class="kpi-val">${k}</div></div>
+    </div>
+    <div class="reg-box mb14">ANOVA Table
+SS(Between) = ${fmt(ssBetween,2)}  df = ${dfBetween}  MS = ${fmt(msBetween,2)}
+SS(Within)  = ${fmt(ssWithin,2)}  df = ${dfWithin}  MS = ${fmt(msWithin,2)}
+F(${dfBetween},${dfWithin}) = ${fmt(F,3)}  p = ${p<0.001?'<0.001':fmt(p,4)}  η² = ${fmt(eta2,3)}
+
+${sig?`✅ Significant difference across ${grpC} groups for ${valC}: F(${dfBetween},${dfWithin})=${fmt(F,3)}, p=${p<0.001?'<0.001':fmt(p,4)}, η²=${fmt(eta2,3)} (${eta2<0.01?'small':eta2<0.06?'medium':'large'} effect). Post-hoc tests recommended.`:`⬜ No significant difference across groups at α=0.05.`}</div>
+    <p class="card-title mb8" style="font-size:12px">Group Summaries</p>
+    <div class="tw"><table class="dt"><thead><tr><th>Group</th><th>N</th><th>Mean</th><th>Std Dev</th><th>Min</th><th>Max</th></tr></thead>
+    <tbody>${keys.map(g=>{const s=calcStats(groups[g]);return `<tr><td class="bold">${g}</td><td class="mono">${s.n}</td><td class="mono">${fmt(s.mean)}</td><td class="mono">${fmt(s.sd)}</td><td class="mono">${fmt(s.min,0)}</td><td class="mono">${fmt(s.max,0)}</td></tr>`;}).join('')}</tbody></table></div>
+  </div>`;
+}
+
+function fCDF(f,d1,d2){
+  // P(F <= f) via incomplete beta
+  const x=d1*f/(d1*f+d2);
+  return incompleteBeta(x,d1/2,d2/2);
+}
+
+// ══════════════════════════════════════════════════
+// COMPARE
+// ══════════════════════════════════════════════════
+function updateCmpCols(){
+  const checked=Array.from(document.querySelectorAll('#cmpCheckboxes input:checked')).map(i=>i.value);
+  if(!checked.length)return;
+  const ds=getDs(checked[0]);
+  if(!ds)return;
+  const cols=allCols(ds.rows);
+  const nc=numCols(ds.rows);
+  const cmpCol=document.getElementById('cmpCol');
+  const cmpNum=document.getElementById('cmpNum');
+  if(cmpCol)cmpCol.innerHTML=cols.map(c=>`<option>${c}</option>`).join('');
+  if(cmpNum)cmpNum.innerHTML=nc.map(c=>`<option>${c}</option>`).join('');
+}
+
+function runCompare(){
+  const checked=Array.from(document.querySelectorAll('#cmpCheckboxes input:checked')).map(i=>i.value);
+  const el=document.getElementById('cmpOut');
+  if(checked.length<2){el.innerHTML='<div class="hint warn">Select at least 2 datasets to compare.</div>';return;}
+  const catCol=document.getElementById('cmpCol').value;
+  const numCol=document.getElementById('cmpNum').value;
+  const chartType=document.getElementById('cmpChart').value;
+  const dsets=checked.map(id=>getDs(id));
+  // Aggregate: for each dataset, mean of numCol per catCol
+  const allCats=[...new Set(dsets.flatMap(ds=>ds.rows.map(r=>String(r[catCol]||'')).filter(Boolean)))].sort();
+  const aggData=dsets.map(ds=>{
+    const bycat={};
+    allCats.forEach(cat=>{const vals=ds.rows.filter(r=>String(r[catCol]||'')===cat).map(r=>parseFloat(r[numCol])).filter(v=>!isNaN(v));bycat[cat]=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;});
+    return bycat;
+  });
+  let html='';
+  // Summary table
+  html+=`<div class="card mb14">
+    <p class="card-title mb12">Side-by-side: ${numCol} by ${catCol}</p>
+    <div class="tw"><table class="dt">
+      <thead><tr><th>${catCol}</th>${dsets.map(ds=>`<th><span style="color:${ds.color}">●</span> ${ds.name}</th>`).join('')}<th>Difference</th></tr></thead>
+      <tbody>${allCats.map(cat=>{
+        const vals=dsets.map((ds,i)=>aggData[i][cat]);
+        const def=vals.filter(v=>v!==null);
+        const diff=def.length>=2?def[def.length-1]-def[0]:null;
+        return `<tr><td class="bold">${cat}</td>${vals.map(v=>`<td class="mono">${v!==null?fmt(v):'—'}</td>`).join('')}<td class="mono ${diff>0?'d-up':diff<0?'d-dn':''}">${diff!==null?(diff>0?'+':'')+fmt(diff):'—'}</td></tr>`;
+      }).join('')}</tbody>
+    </table></div></div>`;
+  // Chart
+  html+=`<div class="card mb14"><div style="position:relative;height:300px"><canvas id="cmpChartEl"></canvas></div></div>`;
+  el.innerHTML=html;
+  setTimeout(()=>{
+    destroyChart('cmpChartEl');
+    const ctx=document.getElementById('cmpChartEl');if(!ctx)return;
+    const ct=chartType==='horizontalBar'?'bar':chartType;
+    S.charts['cmpChartEl']=new Chart(ctx,{
+      type:ct,
+      data:{labels:allCats,datasets:dsets.map((ds,i)=>({
+        label:ds.name,
+        data:allCats.map(cat=>aggData[i][cat]),
+        backgroundColor:ds.color+'BB',
+        borderColor:ds.color,
+        borderWidth:ct==='line'?2:0,
+        borderRadius:ct==='bar'?4:0,
+        tension:.3,
+        fill:false,
+        pointRadius:ct==='line'?4:0,
+      }))},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        indexAxis:chartType==='horizontalBar'?'y':'x',
+        plugins:{legend:{position:'top',labels:{boxWidth:12,font:{family:'DM Sans',size:11}}}},
+        scales:ct==='radar'?{}:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#F0F4F8'},ticks:{font:{family:'DM Mono',size:11}}}}
+      }
+    });
+  },80);
+}
+
+// ══════════════════════════════════════════════════
+// CLEAN
+// ══════════════════════════════════════════════════
+function renderClean(){
+  const dsId=document.getElementById('cleanDs')?.value;
+  const ds=getDs(dsId);
+  const el=document.getElementById('cleanOut');
+  if(!ds){el.innerHTML=noData();return;}
+  const rows=ds.rows;
+  const cols=allCols(rows);
+  const nc=numCols(rows);
+  const total=rows.length;
+  const missCols=cols.map(c=>({c,miss:rows.filter(r=>r[c]===null||r[c]===undefined||r[c]==='').length}));
+  const totalMiss=missCols.reduce((s,x)=>s+x.miss,0);
+  const pct=total?Math.round((total-missCols[0]?.miss||0)/total*100):100;
+  // Outlier detection (IQR method) for numeric cols
+  let outlierCount=0;
+  nc.forEach(c=>{const vals=rows.map(r=>r[c]).filter(v=>!isNaN(v)&&v!==null);const s=calcStats(vals);if(!s)return;const lo=s.q1-1.5*s.iqr,hi=s.q3+1.5*s.iqr;outlierCount+=vals.filter(v=>v<lo||v>hi).length;});
+  const comp=Math.round((1-totalMiss/(total*cols.length))*100);
+  el.innerHTML=`
+  <div class="g4 mb14">
+    <div class="kpi ${comp>=90?'good':comp>=75?'warn':'bad'}"><div class="kpi-label">Completeness</div><div class="kpi-val">${comp}%</div><div class="kpi-sub">${totalMiss} missing cells</div><div class="prog mt4"><div class="prog-f ${comp>=90?'ok':comp>=75?'warn':'bad'}" style="width:${comp}%"></div></div></div>
+    <div class="kpi ${totalMiss>0?'warn':'good'}"><div class="kpi-label">Missing Values</div><div class="kpi-val">${totalMiss}</div><div class="kpi-sub">across ${cols.length} columns</div></div>
+    <div class="kpi ${outlierCount>0?'warn':'good'}"><div class="kpi-label">Outliers (IQR)</div><div class="kpi-val">${outlierCount}</div><div class="kpi-sub">in numeric columns</div></div>
+    <div class="kpi"><div class="kpi-label">Total Records</div><div class="kpi-val">${total.toLocaleString()}</div><div class="kpi-sub">${cols.length} columns</div></div>
+  </div>
+  <div class="card mb14">
+    <p class="card-title mb12">Column Completeness Report</p>
+    <div class="tw"><table class="dt">
+      <thead><tr><th>Column</th><th>Type</th><th>Missing</th><th>% Missing</th><th>Unique Values</th><th>Status</th></tr></thead>
+      <tbody>${cols.map(c=>{
+        const miss=rows.filter(r=>r[c]===null||r[c]===undefined||r[c]==='').length;
+        const uniq=new Set(rows.map(r=>r[c])).size;
+        const isNum=nc.includes(c);
+        const pctM=(miss/total*100).toFixed(1);
+        return `<tr><td class="bold">${c}</td><td><span class="bdg ${isNum?'binfo':'bout'}">${isNum?'Numeric':'Text'}</span></td>
+          <td class="mono">${miss}</td><td class="mono">${pctM}%</td>
+          <td class="mono">${uniq}</td>
+          <td>${miss===0?'<span class="bdg bok">✓ Clean</span>':'<span class="bdg bout">⚠ Has missing</span>'}</td></tr>`;
+      }).join('')}</tbody>
+    </table></div>
+  </div>
+  <div class="card">
+    <p class="card-title mb12">🧹 Cleaning Actions</p>
+    <div class="g2">
+      <div>
+        <p class="sm muted mb8"><strong>${totalMiss}</strong> missing values — imputation:</p>
+        <div class="brow" style="margin-top:0">
+          <button class="btn btn-sec btn-sm" onclick="cleanFill('${dsId}','mean')">Fill with mean</button>
+          <button class="btn btn-sec btn-sm" onclick="cleanFill('${dsId}','median')">Fill with median</button>
+          <button class="btn btn-sec btn-sm" onclick="cleanFill('${dsId}','zero')">Fill with zero</button>
+          <button class="btn btn-danger btn-sm" onclick="cleanFill('${dsId}','drop')">Drop missing rows</button>
+        </div>
+      </div>
+      <div>
+        <p class="sm muted mb8"><strong>${outlierCount}</strong> outliers (IQR method):</p>
+        <div class="brow" style="margin-top:0">
+          <button class="btn btn-sec btn-sm" onclick="cleanOutliers('${dsId}','cap')">Cap at IQR fence</button>
+          <button class="btn btn-danger btn-sm" onclick="cleanOutliers('${dsId}','drop')">Drop outlier rows</button>
+        </div>
+      </div>
+    </div>
+    <div class="brow mt12">
+      <button class="btn btn-primary" onclick="exportDsCSV('${dsId}')">⬇ Export Cleaned Dataset</button>
+    </div>
+  </div>`;
+}
+
+function cleanFill(dsId,method){
+  const ds=getDs(dsId);if(!ds)return;
+  const nc=numCols(ds.rows);
+  nc.forEach(c=>{
+    const vals=ds.rows.map(r=>r[c]).filter(v=>!isNaN(v)&&v!==null&&v!=='');
+    let fill=0;
+    if(method==='mean')fill=vals.reduce((s,x)=>s+x,0)/(vals.length||1);
+    if(method==='median'){const s=[...vals].sort((a,b)=>a-b);fill=s[Math.floor(s.length/2)]||0;}
+    ds.rows.forEach(r=>{if(r[c]===null||r[c]===undefined||r[c]===''){if(method==='drop')r.__drop=true;else r[c]=fill;}});
+  });
+  if(method==='drop')ds.rows=ds.rows.filter(r=>!r.__drop);
+  showToast(`Missing values handled (${method})`,'ok');renderClean();
+}
+
+function cleanOutliers(dsId,method){
+  const ds=getDs(dsId);if(!ds)return;
+  const nc=numCols(ds.rows);
+  nc.forEach(c=>{
+    const vals=ds.rows.map(r=>r[c]).filter(v=>!isNaN(v)&&v!==null);
+    const s=calcStats(vals);if(!s)return;
+    const lo=s.q1-1.5*s.iqr,hi=s.q3+1.5*s.iqr;
+    ds.rows.forEach(r=>{
+      const v=r[c];if(v===null||isNaN(v))return;
+      if(v<lo||v>hi){if(method==='cap')r[c]=v<lo?lo:hi;else r.__drop=true;}
+    });
+  });
+  if(method==='drop')ds.rows=ds.rows.filter(r=>!r.__drop);
+  showToast(`Outliers handled (${method})`,'ok');renderClean();
+}
+
+// ══════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════
+function populateDashCols(){
+  const dsId=document.getElementById('dashDs')?.value;
+  const ds=getDs(dsId);
+  if(!ds)return;
+  const cols=allCols(ds.rows);
+  const nc=numCols(ds.rows);
+  const dashX=document.getElementById('dashX');
+  const dashY=document.getElementById('dashY');
+  if(dashX)dashX.innerHTML=cols.map(c=>`<option>${c}</option>`).join('');
+  if(dashY)dashY.innerHTML=nc.map(c=>`<option>${c}</option>`).join('');
+  renderDashboard();
+}
+
+function renderDashboard(){
+  const dsId=document.getElementById('dashDs')?.value;
+  const ds=getDs(dsId);
+  const el=document.getElementById('dashMain');
+  const kpiEl=document.getElementById('dashKPIs');
+  const insEl=document.getElementById('dashInsightCard');
+  if(!ds){el.innerHTML=noData();kpiEl.style.display='none';insEl.style.display='none';return;}
+  const xCol=document.getElementById('dashX')?.value;
+  const yCol=document.getElementById('dashY')?.value;
+  const chartType=document.getElementById('dashType')?.value;
+  if(!xCol||!yCol){el.innerHTML='<div class="hint">Select X and Y columns above.</div>';return;}
+  const rows=ds.rows.filter(r=>r[xCol]!==undefined&&r[xCol]!==null&&r[xCol]!=='');
+  const nc=numCols(ds.rows);
+  // KPIs
+  if(nc.length&&kpiEl){
+    kpiEl.style.display='grid';
+    const vals=rows.map(r=>parseFloat(r[yCol])).filter(v=>!isNaN(v));
+    const s=calcStats(vals);
+    kpiEl.innerHTML=s?[
+      ['Total',vals.reduce((a,b)=>a+b,0).toLocaleString(),''],
+      ['Mean',fmt(s.mean),''],
+      ['Median',fmt(s.median),''],
+      ['Max',fmt(s.max,0),'good'],
+    ].map(([l,v,cls])=>`<div class="kpi ${cls}"><div class="kpi-label">${l}</div><div class="kpi-val">${v}</div></div>`).join(''):'';
+  }
+  // Aggregate x → mean of y
+  const cats=[...new Set(rows.map(r=>String(r[xCol]||'')).filter(Boolean))];
+  const aggData=cats.map(cat=>{const vs=rows.filter(r=>String(r[xCol])===cat).map(r=>parseFloat(r[yCol])).filter(v=>!isNaN(v));return vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:0;});
+  const ct=chartType==='horizontalBar'?'bar':chartType;
+  el.innerHTML=`<div class="card"><div class="fxb mb12">
+    <p class="card-title" style="margin:0">${yCol} by ${xCol}</p>
+    <button class="btn btn-ghost btn-sm" onclick="saveChart('mainDashChart')">⬇ PNG</button></div>
+    <div style="position:relative;height:320px"><canvas id="mainDashChart"></canvas></div></div>`;
+  setTimeout(()=>{
+    destroyChart('mainDashChart');
+    const ctx=document.getElementById('mainDashChart');if(!ctx)return;
+    S.charts['mainDashChart']=new Chart(ctx,{
+      type:ct,
+      data:{labels:cats,datasets:[{
+        label:yCol,
+        data:aggData,
+        backgroundColor:cats.map((_,i)=>DS_COLORS[i%DS_COLORS.length]+'BB'),
+        borderColor:cats.map((_,i)=>DS_COLORS[i%DS_COLORS.length]),
+        borderWidth:ct==='line'?2:0,
+        borderRadius:ct==='bar'?5:0,
+        tension:.3,fill:false,pointRadius:ct==='line'?5:0,
+      }]},
+      options:{responsive:true,maintainAspectRatio:false,
+        indexAxis:chartType==='horizontalBar'?'y':'x',
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${yCol}: ${fmt(c.raw)}`}}},
+        scales:ct==='doughnut'?{}:{
+          x:{grid:{display:false},ticks:{font:{family:'DM Mono',size:11}}},
+          y:{grid:{color:'#F0F4F8'},ticks:{font:{family:'DM Mono',size:11},callback:v=>fmt(v,0)}}
+        }}
+    });
+    insEl.style.display='block';
+  },80);
+}
+
+function addChart(){
+  const dsId=document.getElementById('dashDs')?.value;
+  const ds=getDs(dsId);if(!ds)return;
+  const nc=numCols(ds.rows);const cols=allCols(ds.rows);
+  if(nc.length<1){showToast('No numeric columns','err');return;}
+  const xCol=cols[0],yCol=nc[0];
+  const cid='addedChart'+(++S.dashChartCount);
+  const div=document.createElement('div');
+  div.className='card mb14';
+  div.id='div_'+cid;
+  div.innerHTML=`<div class="fxb mb12">
+    <div class="fxc gap10">
+      <select class="fi" id="${cid}_x" onchange="refreshAddedChart('${cid}')" style="width:160px">${cols.map(c=>`<option>${c}</option>`).join('')}</select>
+      <select class="fi" id="${cid}_y" onchange="refreshAddedChart('${cid}')" style="width:160px">${nc.map(c=>`<option>${c}</option>`).join('')}</select>
+      <select class="fi" id="${cid}_type" onchange="refreshAddedChart('${cid}')" style="width:120px">
+        <option value="bar">Bar</option><option value="line">Line</option><option value="doughnut">Donut</option>
+      </select>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('div_${cid}').remove()">✕</button>
+  </div>
+  <div style="position:relative;height:260px"><canvas id="${cid}"></canvas></div>`;
+  document.getElementById('dashMain').after(div);
+  refreshAddedChart(cid);
+}
+
+function refreshAddedChart(cid){
+  const dsId=document.getElementById('dashDs')?.value;const ds=getDs(dsId);if(!ds)return;
+  const xEl=document.getElementById(cid+'_x');const yEl=document.getElementById(cid+'_y');const tEl=document.getElementById(cid+'_type');
+  if(!xEl)return;
+  const xCol=xEl.value,yCol=yEl.value,chartType=tEl.value;
+  const rows=ds.rows;
+  const cats=[...new Set(rows.map(r=>String(r[xCol]||'')).filter(Boolean))];
+  const aggData=cats.map(cat=>{const vs=rows.filter(r=>String(r[xCol])===cat).map(r=>parseFloat(r[yCol])).filter(v=>!isNaN(v));return vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:0;});
+  destroyChart(cid);
+  const ctx=document.getElementById(cid);if(!ctx)return;
+  S.charts[cid]=new Chart(ctx,{type:chartType==='horizontalBar'?'bar':chartType,
+    data:{labels:cats,datasets:[{label:yCol,data:aggData,backgroundColor:cats.map((_,i)=>DS_COLORS[i%DS_COLORS.length]+'BB'),borderRadius:chartType==='bar'?4:0,tension:.3,borderWidth:chartType==='line'?2:0,fill:false,pointRadius:chartType==='line'?4:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:chartType==='doughnut'?{}:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#F0F4F8'},ticks:{font:{family:'DM Mono',size:11}}}}}
+  });
+}
+
+function saveChart(id){
+  const c=document.getElementById(id);if(!c)return;
+  const a=document.createElement('a');a.download='chart.png';a.href=c.toDataURL();a.click();
+}
+
+// ══════════════════════════════════════════════════
+// AI INSIGHTS
+// ══════════════════════════════════════════════════
+function renderInsights(){
+  const el=document.getElementById('insightsOut');
+  el.innerHTML=`
+    ${!S.apiKey?'<div class="hint warn">⚠️ Add your <strong>Anthropic API key</strong> (click 🔑 AI Key in the header) to enable AI-powered analysis.</div>':''}
+    <div class="card mb14">
+      <div class="card-hdr"><p class="card-title">📊 Dataset to Analyse</p></div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Select dataset</label><select class="fi" id="aiDs"></select></div>
+        <div class="fg"><label class="fl">Analysis depth</label>
+          <select class="fi" id="aiDepth">
+            <option value="quick">Quick summary</option>
+            <option value="full">Full analysis</option>
+            <option value="policy">Policy recommendations</option>
+            <option value="custom">Custom question</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card mb14">
+      <p class="card-title mb12">🤖 Ask Claude</p>
+      <div class="fg">
+        <label class="fl">Your question</label>
+        <textarea class="fi" id="aiQ" rows="3" placeholder="e.g. What are the key patterns and trends? Which areas need priority intervention?"></textarea>
+      </div>
+      <div class="flex fxc gap6 mb12" style="flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="fillAI('Summarise the key trends, patterns, and public health implications of this dataset')">📝 Summarise</button>
+        <button class="btn btn-ghost btn-sm" onclick="fillAI('Identify data quality issues, anomalies, and outliers in this dataset')">🔍 Quality issues</button>
+        <button class="btn btn-ghost btn-sm" onclick="fillAI('Generate evidence-based public health recommendations and priority interventions based on this data')">💡 Recommendations</button>
+        <button class="btn btn-ghost btn-sm" onclick="fillAI('Interpret the statistical patterns and write a results section suitable for a health report')">📄 Write results</button>
+        <button class="btn btn-ghost btn-sm" onclick="fillAI('Identify disparities, inequities, and vulnerable populations revealed by this data')">⚖️ Equity analysis</button>
+      </div>
+      <div class="brow" style="margin-top:0">
+        <button class="btn btn-primary" onclick="askAI()">Ask Claude ↗</button>
+      </div>
+    </div>
+    <div id="aiResp"></div>`;
+  const aiDs=document.getElementById('aiDs');
+  if(aiDs){const ids=dsIds();aiDs.innerHTML=ids.map(id=>`<option value="${id}">${getDs(id).name}</option>`).join('')||'<option>No datasets</option>';}
+}
+
+function fillAI(t){const el=document.getElementById('aiQ');if(el)el.value=t;}
+
+async function aiChartInsight(){
+  const dsId=document.getElementById('dashDs')?.value;
+  const ds=getDs(dsId);
+  const el=document.getElementById('dashInsightOut');
+  if(!ds||!S.apiKey){if(!S.apiKey)openModal('aiKeyModal');return;}
+  el.innerHTML='<div class="loading"><div class="spin"></div><span>Generating insight…</span></div>';
+  const xCol=document.getElementById('dashX')?.value;
+  const yCol=document.getElementById('dashY')?.value;
+  const nc=numCols(ds.rows);
+  const cats=[...new Set(ds.rows.map(r=>String(r[xCol]||'')).filter(Boolean))];
+  const aggData=cats.map(cat=>{const vs=ds.rows.filter(r=>String(r[xCol])===cat).map(r=>parseFloat(r[yCol])).filter(v=>!isNaN(v));return {cat,mean:vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:0,n:vs.length};});
+  const ctx=`You are a public health data analyst. Analyse this chart data and provide a concise 3-4 sentence insight suitable for a health dashboard.
+Dataset: "${ds.name}" | X: ${xCol} | Y: ${yCol}
+Data: ${JSON.stringify(aggData.slice(0,20))}
+Be specific with numbers. Identify the highest/lowest values, notable patterns, and one actionable implication.`;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:ctx}]})});
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error.message);
+    el.innerHTML=`<p class="sm muted" style="font-style:italic;line-height:1.7">${data.content[0].text}</p>`;
+  }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}
+}
+
+async function askAI(){
+  const q=(document.getElementById('aiQ')||{}).value?.trim();
+  const dsId=document.getElementById('aiDs')?.value;
+  const ds=getDs(dsId);
+  const el=document.getElementById('aiResp');
+  if(!q){showToast('Enter a question','err');return;}
+  if(!S.apiKey){openModal('aiKeyModal');return;}
+  if(!ds){showToast('Select a dataset first','err');return;}
+  el.innerHTML='<div class="loading"><div class="spin"></div><span>Claude is analysing your data…</span></div>';
+  const nc=numCols(ds.rows);
+  const cols=allCols(ds.rows);
+  const statSummary=nc.map(c=>{const s=calcStats(ds.rows.map(r=>r[c]).filter(v=>!isNaN(v)));if(!s)return`${c}: no numeric data`;return`${c}: n=${s.n}, mean=${fmt(s.mean)}, median=${fmt(s.median)}, sd=${fmt(s.sd)}, min=${fmt(s.min,0)}, max=${fmt(s.max,0)}, skew=${skewLabel(s.skew)}`;}).join('\n');
+  const sampleRows=ds.rows.slice(0,10).map(r=>JSON.stringify(r)).join('\n');
+  const ctx=`You are a senior health informatics analyst and public health expert.
+
+Dataset: "${ds.name}"
+Total records: ${ds.rows.length} | Columns: ${cols.join(', ')}
+
+Statistical Summary:
+${statSummary}
+
+Sample rows (first 10):
+${sampleRows}
+
+User question: ${q}
+
+Provide a thorough, evidence-based response. Use specific numbers from the data. Where relevant, include:
+- Key findings with statistics
+- Interpretation in public health context
+- Data quality considerations
+- Actionable recommendations
+Format clearly with headers where appropriate.`;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:ctx}]})});
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error.message);
+    const text=data.content[0].text;
+    el.innerHTML=`<div class="card">
+      <div class="card-hdr"><p class="card-title">🤖 Claude's Analysis</p>
+        <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText(document.querySelector('.ai-out').textContent).then(()=>showToast('Copied','ok'))">📋 Copy</button>
+      </div>
+      <div class="ai-out">${text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>
+    </div>`;
+  }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}
+}
+
+// ══════════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════════
+function nav(tab){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  document.getElementById('nav-'+tab).classList.add('active');
+  if(tab==='query')populateQueryFilters();
+  if(tab==='stats'){populateStatCols();renderStats();}
+  if(tab==='inference')populateInferenceCols();
+  if(tab==='compare')updateCmpCols();
+  if(tab==='clean'){const el=document.getElementById('cleanDs');if(el&&dsIds().length){el.innerHTML=dsIds().map(id=>`<option value="${id}">${getDs(id).name}</option>`).join('');renderClean();}}
+  if(tab==='dashboard')populateDashCols();
+  if(tab==='insights')renderInsights();
+}
+
+// ══════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════
+function updateConnPill(){
+  const el=document.getElementById('connPill');
+  const n=dsIds().length;
+  el.className='conn-pill '+(n?'on':'off');
+  el.innerHTML=`<span class="cdot"></span>${n?n+' dataset'+(n>1?'s':'')+' loaded':'No data loaded'}`;
+}
+
+function noData(){return`<div class="empty"><div class="empty-ic">🔗</div><p class="empty-title">No data loaded</p><p class="empty-desc"><a href="#" onclick="nav('connect');return false">Load a dataset</a> to get started</p></div>`;}
+
+function showToast(msg,type='ok'){
+  const t=document.getElementById('toast');
+  t.className='toast '+type;
+  t.innerHTML=(type==='ok'?'✅':'❌')+' '+msg;
+  void t.offsetWidth;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function saveKey(){const k=document.getElementById('apiKeyIn').value.trim();S.apiKey=k;localStorage.setItem('hb_apikey',k);closeModal('aiKeyModal');showToast('API key saved','ok');}
+
+function showHelp(){showToast('Load data → Query → Stats / Inferential → Dashboard → AI Insights','ok');}
+
+function destroyChart(id){if(S.charts[id]){S.charts[id].destroy();delete S.charts[id];}}
+
+function dlFile(content,filename,type='text/csv'){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type}));
+  a.download=filename;a.click();
+}
+
+function exportCSV(rows){
+  if(!rows||!rows.length)return;
+  const cols=Object.keys(rows[0]);
+  const csv=cols.join(',')+'\n'+rows.map(r=>cols.map(c=>{const v=r[c]??'';return typeof v==='string'&&v.includes(',')? `"${v}"`:v;}).join(',')).join('\n');
+  dlFile(csv,'export.csv');
+  showToast('CSV downloaded','ok');
+}
+
+function exportDsCSV(dsId){
+  const ds=getDs(dsId);if(!ds)return;
+  exportCSV(ds.rows);
+}
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  if(S.apiKey)document.getElementById('apiKeyIn').value=S.apiKey;
+  updateConnPill();
+});
+</script>
+</body>
+</html>
