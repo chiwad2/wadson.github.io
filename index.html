@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DecisionLine — Data Intelligence for Public Health</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --tl:#0EA5E9;--tld:#38BDF8;--gn:#10B981;--am:#F59E0B;--rd:#EF4444;--pu:#8B5CF6;
+  --t1:#dde9f4;--t2:#7a9cb8;--t3:#3d5a72;
+  --br:rgba(56,189,248,.12);
+  --sb:240px;--hh:56px;--r:8px;--rl:12px;
+}
+html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;font-size:14px;color:var(--t1);}
+
+/* ── BACKGROUND ───────────────────── */
+body{
+  background:#04090f;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 10% 5%, rgba(14,165,233,.18) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 95%, rgba(16,185,129,.13) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 35% at 50% 50%, rgba(139,92,246,.07) 0%, transparent 60%),
+    linear-gradient(160deg, #04090f 0%, #07111f 50%, #04090f 100%);
+  overflow:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(56,189,248,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,189,248,.022) 1px, transparent 1px);
+  background-size:52px 52px;
+  mask-image:radial-gradient(ellipse 85% 85% at 50% 50%, black 30%, transparent 100%);
+}
+body::after{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(56,189,248,.06) 0%, transparent 35%),
+    radial-gradient(circle at 80% 70%, rgba(16,185,129,.05) 0%, transparent 30%);
+  animation:bgPulse 16s ease-in-out infinite alternate;
+}
+@keyframes bgPulse{0%{opacity:.5;}100%{opacity:1;}}
+
+#app{display:flex;flex-direction:column;height:100vh;position:relative;z-index:1;}
+
+/* ── HEADER ── */
+.hdr{
+  height:var(--hh);
+  background:rgba(4,9,15,.88);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  display:flex;align-items:center;padding:0 18px;gap:12px;
+  z-index:40;flex-shrink:0;
+  border-bottom:1px solid rgba(56,189,248,.1);
+  box-shadow:0 2px 20px rgba(0,0,0,.5);
+}
+.hamburger{
+  display:none;flex-direction:column;justify-content:center;gap:5px;
+  cursor:pointer;padding:8px;background:none;border:none;
+  border-radius:6px;transition:background .2s;flex-shrink:0;
+}
+.hamburger:hover{background:rgba(56,189,248,.1);}
+.hamburger span{display:block;width:22px;height:2px;background:rgba(255,255,255,.6);border-radius:2px;transition:transform .28s ease,opacity .2s ease,background .2s;}
+.hamburger:hover span{background:#fff;}
+/* X animation */
+.hamburger.is-open span:nth-child(1){transform:translateY(7px) rotate(45deg);background:#38BDF8;}
+.hamburger.is-open span:nth-child(2){opacity:0;transform:scaleX(0);}
+.hamburger.is-open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);background:#38BDF8;}
+
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-text{font-size:18px;font-weight:700;color:#fff;letter-spacing:-.02em;}
+.logo-line{color:#38BDF8;animation:logoGlow 3s ease-in-out infinite alternate;}
+@keyframes logoGlow{from{text-shadow:0 0 6px rgba(56,189,248,.3);}to{text-shadow:0 0 18px rgba(56,189,248,.7),0 0 32px rgba(56,189,248,.3);}}
+.hdiv{width:1px;height:20px;background:rgba(255,255,255,.1);}
+.htag{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.04em;}
+.hsp{flex:1;}
+.cbadge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.cbadge.on{background:rgba(16,185,129,.18);color:#34D399;border:1px solid rgba(16,185,129,.35);}
+.cbadge.off{background:rgba(255,255,255,.07);color:rgba(255,255,255,.3);border:1px solid rgba(255,255,255,.1);}
+.cdot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.cbadge.on .cdot{animation:dotPulse 1.8s ease-in-out infinite;}
+@keyframes dotPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);}}
+.hbtn{background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.35);color:#38BDF8;border-radius:var(--r);padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;transition:all .2s;white-space:nowrap;}
+.hbtn:hover{background:rgba(56,189,248,.25);box-shadow:0 0 12px rgba(56,189,248,.3);transform:translateY(-1px);}
+
+/* ── LAYOUT ── */
+.layout{display:flex;flex:1;overflow:hidden;position:relative;}
+
+/* Overlay: hidden on desktop, enabled by JS on mobile */
+.sb-ov{
+  display:none; /* JS will set display:block when needed */
+  position:fixed;
+  top:var(--hh);left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.7);
+  backdrop-filter:blur(3px);
+  z-index:299;
+  opacity:0;pointer-events:none;
+  transition:opacity .28s ease;
+}
+.sb-ov.show{opacity:1;pointer-events:all;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sb);
+  background:rgba(4,9,15,.97);
+  border-right:1px solid rgba(56,189,248,.1);
+  display:flex;flex-direction:column;padding:14px 0;
+  flex-shrink:0;overflow-y:auto;
+  z-index:30;
+  /* desktop: static in flow */
+  position:relative;
+}
+.nav-sec{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.2);padding:12px 18px 4px;}
+.nav-it{
+  display:flex;align-items:center;gap:10px;padding:10px 18px;
+  color:rgba(255,255,255,.45);cursor:pointer;
+  transition:all .2s;font-size:13px;
+  border-left:2px solid transparent;user-select:none;
+}
+.nav-it:hover{color:rgba(255,255,255,.9);background:rgba(56,189,248,.06);}
+.nav-it.active{color:#fff;background:rgba(14,165,233,.15);border-left-color:#38BDF8;}
+.nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+.sb-ft{margin-top:auto;padding:14px 18px;border-top:1px solid rgba(255,255,255,.07);}
+.sb-ft p{font-size:11px;color:rgba(255,255,255,.28);line-height:1.8;}
+.sb-ft a{color:#38BDF8;text-decoration:none;}
+.sb-ft strong{color:rgba(255,255,255,.5);}
+
+/* ── MAIN ── */
+.main{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;background:rgba(4,9,15,.3);}
+.tab-panel{display:none !important;}
+.tab-panel.active{display:block !important;animation:tabIn .3s cubic-bezier(.22,1,.36,1);}
+.tab-panel.active.gis-active{display:flex !important;flex-direction:column;flex:1;padding:0;overflow:hidden;animation:none;}
+@keyframes tabIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── CARDS ── */
+.card{background:rgba(7,17,31,.8);backdrop-filter:blur(8px);border:1px solid rgba(56,189,248,.1);border-radius:var(--rl);padding:20px;margin-bottom:16px;box-shadow:0 2px 20px rgba(0,0,0,.3);transition:box-shadow .25s,transform .25s,border-color .25s;animation:cardIn .35s cubic-bezier(.22,1,.36,1) both;}
+.card:hover{box-shadow:0 4px 24px rgba(14,165,233,.1);transform:translateY(-1px);border-color:rgba(56,189,248,.2);}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.card:nth-child(1){animation-delay:.04s;}
+.card:nth-child(2){animation-delay:.09s;}
+.card:nth-child(3){animation-delay:.14s;}
+.card:nth-child(4){animation-delay:.19s;}
+
+/* ── METRICS ── */
+.met{background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.18);border-radius:var(--r);padding:14px 16px;transition:transform .2s,box-shadow .2s;animation:metIn .4s cubic-bezier(.22,1,.36,1) both;}
+.met:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 6px 20px rgba(14,165,233,.15);}
+@keyframes metIn{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
+.met.gn{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.22);}
+.met.am{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.22);}
+.met.rd{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.22);}
+.met.pu{background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.22);}
+.ml{font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.mv{font-size:22px;font-weight:700;color:var(--t1);font-family:'IBM Plex Mono',monospace;}
+.ms{font-size:11px;color:var(--t3);margin-top:2px;}
+
+/* ── BUTTONS ── */
+.btn{border:none;border-radius:var(--r);padding:8px 16px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:6px;line-height:1.4;position:relative;overflow:hidden;}
+.btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.15);opacity:0;transition:opacity .15s;}
+.btn:hover::after{opacity:1;}
+.btn:active{transform:scale(.97);}
+.bp{background:var(--tl);color:#fff;box-shadow:0 2px 8px rgba(14,165,233,.3);}
+.bp:hover{background:#0284C7;box-shadow:0 4px 16px rgba(14,165,233,.45);transform:translateY(-1px);}
+.bg{background:var(--gn);color:#fff;box-shadow:0 2px 8px rgba(16,185,129,.3);}
+.bg:hover{background:#059669;box-shadow:0 4px 16px rgba(16,185,129,.45);transform:translateY(-1px);}
+.bo{background:transparent;color:var(--t2);border:1px solid rgba(56,189,248,.2);}
+.bo:hover{background:rgba(56,189,248,.07);border-color:rgba(56,189,248,.4);transform:translateY(-1px);}
+.bsm{padding:5px 10px;font-size:12px;}
+.blg{padding:11px 24px;font-size:14px;font-weight:600;}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none !important;box-shadow:none !important;}
+.brow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center;}
+
+/* ── OPTION CARDS ── */
+.og{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.oc{border:1px solid rgba(56,189,248,.12);border-radius:var(--rl);padding:20px 14px;cursor:pointer;transition:all .22s cubic-bezier(.22,1,.36,1);text-align:center;background:rgba(7,17,31,.7);}
+.oc:hover{border-color:var(--tl);transform:translateY(-4px) scale(1.02);box-shadow:0 10px 28px rgba(14,165,233,.18);}
+.oc.sel{border-color:var(--tl);border-width:2px;background:rgba(14,165,233,.12);}
+.oci{font-size:28px;margin-bottom:8px;display:block;transition:transform .2s;}
+.oc:hover .oci{transform:scale(1.18) rotate(-3deg);}
+.oct{font-weight:600;font-size:13px;margin-bottom:3px;color:var(--t1);}
+.ocd{font-size:11.5px;color:var(--t3);line-height:1.4;}
+
+/* ── FREQ BARS ── */
+.fbw{background:rgba(56,189,248,.08);border-radius:999px;height:8px;overflow:hidden;flex:1;}
+.fb{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--tl),#7DD3FC);transition:width .7s cubic-bezier(.22,1,.36,1);width:0;}
+
+/* ── PROGRESS BARS ── */
+.pw{background:rgba(56,189,248,.08);border-radius:999px;height:7px;overflow:hidden;}
+.pb{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--gn),#34D399);transition:width .7s cubic-bezier(.22,1,.36,1);}
+.pb.w{background:linear-gradient(90deg,var(--am),#FCD34D);}
+.pb.d{background:linear-gradient(90deg,var(--rd),#F87171);}
+
+/* ── TABLE ── */
+.dt tr{animation:rowIn .2s ease both;}
+@keyframes rowIn{from{opacity:0;transform:translateX(-4px);}to{opacity:1;transform:none;}}
+.dt tr:nth-child(1){animation-delay:.02s;}
+.dt tr:nth-child(2){animation-delay:.04s;}
+.dt tr:nth-child(3){animation-delay:.06s;}
+.dt tr:nth-child(4){animation-delay:.08s;}
+.dt tr:nth-child(5){animation-delay:.10s;}
+
+/* ── BANNER ── */
+.banner{background:linear-gradient(135deg,#061020 0%,#0c2340 60%,#071a30 100%);border:1px solid rgba(56,189,248,.1);border-radius:var(--rl);padding:26px 30px;margin-bottom:20px;color:#fff;position:relative;overflow:hidden;}
+.banner::before{content:'';position:absolute;top:-40px;right:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(56,189,248,.1),transparent 70%);border-radius:50%;animation:bannerOrb 7s ease-in-out infinite alternate;}
+@keyframes bannerOrb{from{transform:scale(1);}to{transform:scale(1.3) translate(10px,-10px);}}
+.banner h2{font-size:21px;font-weight:700;margin-bottom:6px;letter-spacing:-.02em;}
+.banner p{font-size:13px;color:rgba(255,255,255,.55);line-height:1.65;max-width:560px;}
+.bsteps{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
+.bst{background:rgba(255,255,255,.05);border-radius:var(--r);padding:10px 14px;flex:1;min-width:100px;border:1px solid rgba(255,255,255,.08);transition:all .2s;}
+.bst:hover{background:rgba(56,189,248,.1);border-color:rgba(56,189,248,.25);transform:translateY(-2px);}
+.bstn{font-size:10px;color:#38BDF8;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px;}
+.bstt{font-size:12px;color:rgba(255,255,255,.65);}
+
+/* ── SHIMMER ── */
+@keyframes shimmer{0%{background-position:-600px 0;}100%{background-position:600px 0;}}
+.shimmer{background:linear-gradient(90deg,rgba(56,189,248,.04) 25%,rgba(56,189,248,.1) 50%,rgba(56,189,248,.04) 75%);background-size:600px 100%;animation:shimmer 1.4s infinite linear;border-radius:6px;}
+.spin{width:28px;height:28px;border:2.5px solid rgba(56,189,248,.2);border-top-color:var(--tl);border-radius:50%;animation:sp .65s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;background:#071220;color:#fff;padding:12px 18px;border-radius:var(--rl);font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:flex;align-items:center;gap:9px;z-index:600;transform:translateY(80px) scale(.95);opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);max-width:320px;border:1px solid rgba(56,189,248,.15);}
+.toast.show{transform:translateY(0) scale(1);opacity:1;}
+.toast.ok{border-color:rgba(16,185,129,.4);}
+.toast.er{border-color:rgba(239,68,68,.4);}
+
+/* ── CHART BTNS ── */
+.ctypes{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.ctbtn{border:1px solid rgba(56,189,248,.15);border-radius:var(--r);padding:8px 14px;cursor:pointer;font-size:12.5px;font-family:inherit;background:rgba(4,9,15,.5);color:var(--t2);transition:all .18s;display:flex;align-items:center;gap:6px;}
+.ctbtn:hover{border-color:var(--tl);color:#7DD3FC;transform:translateY(-1px);}
+.ctbtn.active{border-color:var(--tl);background:rgba(14,165,233,.15);color:#7DD3FC;font-weight:600;}
+
+/* ── AI ── */
+.ai-out{background:#040d1a;border-radius:var(--rl);padding:20px 22px;color:#a8c8e0;font-size:13px;line-height:1.85;white-space:pre-wrap;font-family:'IBM Plex Mono',monospace;border:1px solid rgba(56,189,248,.1);}
+.ai-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.ap{background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.22);color:#7DD3FC;border-radius:999px;padding:4px 12px;font-size:12px;cursor:pointer;transition:all .18s;}
+.ap:hover{background:rgba(14,165,233,.2);transform:translateY(-1px);}
+
+/* ── CHI-SQUARE ── */
+.chi-box{background:linear-gradient(135deg,#040d1a,#071525);color:#fff;border-radius:var(--rl);padding:20px 28px;margin-top:14px;display:flex;gap:32px;align-items:center;flex-wrap:wrap;border:1px solid rgba(56,189,248,.12);}
+.chi-v{font-size:26px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#38BDF8;text-shadow:0 0 16px rgba(56,189,248,.4);}
+.chi-s{text-align:center;}
+.chi-l{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;text-transform:uppercase;letter-spacing:.06em;}
+.chi-i{flex:1;font-size:13px;color:rgba(255,255,255,.75);line-height:1.65;}
+
+/* ── CONTINGENCY ── */
+.ctbl{width:100%;border-collapse:collapse;font-size:12.5px;}
+.ctbl th{background:rgba(4,9,15,.9);color:rgba(255,255,255,.8);padding:10px 14px;text-align:center;font-weight:600;font-size:11px;letter-spacing:.03em;}
+.ctbl th.rlh{text-align:left;background:rgba(6,14,31,.9);}
+.ctbl td{padding:10px 14px;border:1px solid rgba(56,189,248,.08);text-align:center;color:var(--t1);}
+.ctbl td.rl{font-weight:600;background:rgba(4,9,15,.5);text-align:left;}
+.ctbl td.tot{background:rgba(14,165,233,.08);font-weight:600;}
+.ctbl td.grd{background:rgba(14,165,233,.2);color:#fff;font-weight:700;}
+.pct{font-size:10px;color:var(--t3);display:block;margin-top:1px;}
+.cnt{font-weight:700;font-family:'IBM Plex Mono',monospace;font-size:13px;}
+
+/* ── FORMS ── */
+.fg{margin-bottom:13px;}
+.fl{display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:5px;}
+.fi{width:100%;border:1px solid rgba(56,189,248,.15);border-radius:var(--r);padding:8px 12px;font-size:13px;font-family:inherit;color:var(--t1);background:rgba(4,9,15,.7);outline:none;transition:border-color .2s,box-shadow .2s;}
+.fi:focus{border-color:var(--tl);box-shadow:0 0 0 3px rgba(14,165,233,.12);}
+.fi::placeholder{color:var(--t3);}
+select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%237a9cb8' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+select.fi option{background:#07111f;color:var(--t1);}
+textarea.fi{resize:vertical;min-height:100px;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+
+/* ── MODAL ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+.ov.open{opacity:1;pointer-events:all;}
+.ov.open .modal{transform:translateY(0) scale(1);}
+.modal{background:#07111f;border:1px solid rgba(56,189,248,.15);border-radius:var(--rl);width:460px;max-width:95vw;padding:26px;box-shadow:0 24px 80px rgba(0,0,0,.7);transform:translateY(20px) scale(.96);transition:transform .3s cubic-bezier(.22,1,.36,1);}
+.modal-t{font-size:16px;font-weight:700;margin-bottom:14px;color:var(--t1);}
+
+/* ── SPINNER / EMPTY ── */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--t3);flex-direction:column;gap:12px;}
+.empty{text-align:center;padding:56px 24px;color:var(--t3);}
+.ei{font-size:44px;margin-bottom:14px;display:block;animation:emptyBounce 2s ease-in-out infinite;}
+@keyframes emptyBounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+.et{font-size:15px;font-weight:600;color:var(--t2);margin-bottom:6px;}
+.ed{font-size:13px;line-height:1.5;}
+
+/* ── SEARCH ── */
+.srch{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.si{border:1px solid rgba(56,189,248,.15);border-radius:var(--r);padding:7px 12px;font-size:13px;font-family:inherit;outline:none;flex:1;min-width:160px;transition:border-color .2s,box-shadow .2s;background:rgba(4,9,15,.7);color:var(--t1);}
+.si:focus{border-color:var(--tl);box-shadow:0 0 0 3px rgba(14,165,233,.1);}
+.si::placeholder{color:var(--t3);}
+
+/* ── COL TYPE PILLS ── */
+.ctn{background:rgba(29,78,216,.25);color:#93c5fd;border-radius:4px;font-size:9px;padding:1px 5px;font-weight:700;}
+.ctc{background:rgba(157,23,77,.25);color:#f9a8d4;border-radius:4px;font-size:9px;padding:1px 5px;font-weight:700;}
+.ctd{background:rgba(6,95,70,.25);color:#6ee7b7;border-radius:4px;font-size:9px;padding:1px 5px;font-weight:700;}
+
+/* ── STAT TABS ── */
+.stabs{display:flex;gap:4px;background:rgba(4,9,15,.7);border:1px solid rgba(56,189,248,.1);border-radius:var(--r);padding:4px;margin-bottom:18px;width:fit-content;}
+.stab{padding:6px 16px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--t2);transition:all .18s;font-weight:500;}
+.stab:hover{color:var(--t1);background:rgba(14,165,233,.1);}
+.stab.active{background:rgba(14,165,233,.2);color:#7DD3FC;border:1px solid rgba(56,189,248,.2);}
+
+/* ── HINT ── */
+.hint{display:flex;align-items:flex-start;gap:9px;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.2);border-radius:var(--r);padding:11px 14px;font-size:12.5px;color:#7dd3fc;margin-bottom:14px;line-height:1.55;}
+.hint.wn{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.25);color:#fcd34d;}
+.hint.er{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25);color:#fca5a5;}
+.hint.ok{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25);color:#6ee7b7;}
+
+/* ── TABLE ── */
+.tw{overflow-x:auto;border-radius:var(--rl);border:1px solid rgba(56,189,248,.1);}
+.dt{width:100%;border-collapse:collapse;font-size:12.5px;}
+.dt th{background:rgba(4,9,15,.85);padding:10px 14px;text-align:left;font-weight:600;color:var(--t2);font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid rgba(56,189,248,.1);white-space:nowrap;cursor:pointer;user-select:none;transition:background .15s;}
+.dt th:hover{background:rgba(14,165,233,.1);color:#7dd3fc;}
+.dt td{padding:9px 14px;border-bottom:1px solid rgba(56,189,248,.05);color:var(--t1);}
+.dt td.mn{font-family:'IBM Plex Mono',monospace;font-size:12px;}
+.dt tr:last-child td{border-bottom:none;}
+.dt tr:hover td{background:rgba(14,165,233,.04);}
+.dt tfoot td{background:rgba(4,9,15,.7);font-weight:600;border-top:1px solid rgba(56,189,248,.15);}
+.bdg{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;}
+.bok{background:rgba(16,185,129,.15);color:#6ee7b7;}
+.bwn{background:rgba(245,158,11,.15);color:#fcd34d;}
+.ber{background:rgba(239,68,68,.15);color:#fca5a5;}
+.bin{background:rgba(14,165,233,.15);color:#7dd3fc;}
+.bpu{background:rgba(139,92,246,.15);color:#c4b5fd;}
+
+/* ── TYPE ── */
+.pg-t{font-size:20px;font-weight:700;color:var(--t1);margin-bottom:3px;letter-spacing:-.02em;}
+.pg-s{color:var(--t2);font-size:13px;margin-bottom:22px;line-height:1.55;}
+.ct{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--t1);}
+
+/* ── GRID HELPERS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.fc{display:flex;align-items:center;}
+.fb2{display:flex;align-items:center;justify-content:space-between;}
+.g8{gap:8px;}.g12{gap:12px;}
+.mt4{margin-top:4px;}.mt8{margin-top:8px;}.mt16{margin-top:16px;}
+.mb8{margin-bottom:8px;}.mb14{margin-bottom:14px;}.mb16{margin-bottom:16px;}
+.ts{font-size:12px;}.tm{color:var(--t2);}.tx{font-size:11px;}
+.fw6{font-weight:600;}
+a{color:var(--tl);}
+
+/* ── DATA PAGE OVERLAY ── */
+#dpage{position:fixed;top:var(--hh);left:var(--sb);right:0;bottom:0;background:linear-gradient(135deg,#020609 0%,#06101e 50%,#030709 100%);z-index:100;overflow-y:auto;display:none;flex-direction:column;}
+.dp-hdr{padding:18px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;}
+.dp-logo{display:flex;align-items:center;gap:10px;}
+.dp-lt{font-size:18px;font-weight:700;color:#fff;letter-spacing:-.02em;}
+.dp-ll{color:#38BDF8;}
+.dp-body{flex:1;padding:44px 32px;max-width:860px;margin:0 auto;width:100%;}
+.dp-title{font-size:30px;font-weight:700;color:#fff;margin-bottom:10px;letter-spacing:-.025em;}
+.dp-sub{font-size:14px;color:rgba(255,255,255,.45);margin-bottom:36px;line-height:1.7;max-width:580px;}
+.dp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px;}
+.dp-oc{border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:22px 20px;cursor:pointer;transition:all .22s;background:rgba(255,255,255,.03);display:flex;flex-direction:column;align-items:flex-start;}
+.dp-oc:hover{border-color:#38BDF8;background:rgba(56,189,248,.08);transform:translateY(-2px);box-shadow:0 8px 28px rgba(14,165,233,.12);}
+.dp-oc.sel{border-color:#38BDF8;border-width:2px;background:rgba(56,189,248,.12);}
+.dp-oci{font-size:30px;margin-bottom:10px;}
+.dp-oct{font-weight:600;font-size:14px;color:#fff;margin-bottom:4px;}
+.dp-ocd{font-size:12px;color:rgba(255,255,255,.4);line-height:1.55;}
+.dp-panel{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:24px;margin-bottom:16px;}
+.dp-panel .ct{color:#fff !important;}
+.dp-panel .fl{color:rgba(255,255,255,.55) !important;}
+.dp-panel .fi{background:rgba(255,255,255,.06) !important;border-color:rgba(255,255,255,.13) !important;color:#fff !important;}
+.dp-panel .fi:focus{border-color:#38BDF8 !important;background:rgba(255,255,255,.1) !important;}
+.dp-panel .fi::placeholder{color:rgba(255,255,255,.28) !important;}
+.dp-panel select.fi option{background:#06101e;color:#fff;}
+.dp-panel .hint{background:rgba(56,189,248,.1) !important;border-color:rgba(56,189,248,.25) !important;color:#BAE6FD !important;}
+.dp-panel .hint.wn{background:rgba(245,158,11,.1) !important;border-color:rgba(245,158,11,.25) !important;color:#FDE68A !important;}
+.dp-panel .hint.er{background:rgba(239,68,68,.1) !important;border-color:rgba(239,68,68,.25) !important;color:#FCA5A5 !important;}
+.dp-panel .hint.ok{background:rgba(16,185,129,.1) !important;border-color:rgba(16,185,129,.25) !important;color:#86EFAC !important;}
+.dp-panel .tx{color:rgba(255,255,255,.3) !important;}
+.dp-back{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);color:rgba(255,255,255,.65);border-radius:8px;padding:7px 16px;font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:6px;}
+.dp-back:hover{background:rgba(255,255,255,.14);color:#fff;}
+.dp-step{display:flex;gap:10px;margin-bottom:32px;flex-wrap:wrap;}
+.dp-st{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:10px 16px;flex:1;min-width:100px;}
+.dp-stn{font-size:10px;color:#38BDF8;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px;}
+.dp-stt{font-size:12px;color:rgba(255,255,255,.6);}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(56,189,248,.2);border-radius:999px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(56,189,248,.4);}
+
+/* ══ MOBILE ══════════════════════════════════════ */
+@media(max-width:768px){
+  .hamburger{display:flex;}
+  .htag,.hdiv{display:none;}
+  .hbtn{padding:5px 8px;font-size:11px;}
+  #cbadge{font-size:11px;padding:3px 8px;}
+  .logo-text{font-size:15px;}
+
+  /* Sidebar: off-screen, slides in over content */
+  .sidebar{
+    position:fixed;
+    left:-260px;
+    top:var(--hh);
+    bottom:0;
+    width:240px;
+    transition:left .28s cubic-bezier(.22,1,.36,1);
+    z-index:300;
+  }
+  .sidebar.is-open{left:0;box-shadow:6px 0 40px rgba(0,0,0,.7);}
+
+  /* Overlay visible on mobile */
+  .sb-ov{display:block;}
+
+  /* Data page and main go full width */
+  #dpage{left:0 !important;top:var(--hh);z-index:100;}
+  .main{padding:14px;}
+
+  .dp-grid{grid-template-columns:1fr;}
+  .dp-body{padding:20px 16px;}
+  .dp-title{font-size:20px;}
+  .dp-sub{font-size:13px;}
+  .dp-hdr{padding:12px 16px;}
+  .dp-step{flex-direction:column;gap:8px;}
+
+  .g2,.g3,.g4{grid-template-columns:1fr;}
+  .og{grid-template-columns:1fr 1fr;}
+  .g4{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .card{padding:14px;margin-bottom:12px;}
+  .met{padding:10px 12px;}
+  .mv{font-size:18px;}
+  .pg-t{font-size:17px;}
+  .pg-s{font-size:12px;margin-bottom:14px;}
+  .banner{padding:16px;}
+  .banner h2{font-size:16px;}
+  .bsteps{flex-direction:column;gap:6px;}
+  .stabs{overflow-x:auto;width:100%;max-width:100%;-webkit-overflow-scrolling:touch;}
+  .stab{white-space:nowrap;padding:6px 12px;font-size:12px;}
+  .chi-box{flex-direction:column;gap:12px;padding:14px;}
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .dt{min-width:500px;}
+  .dt th,.dt td{padding:8px 10px;font-size:11.5px;}
+  .brow{gap:6px;}
+  .btn{padding:7px 12px;font-size:12px;}
+  .ctypes{gap:5px;}
+  .ctbtn{padding:6px 10px;font-size:11.5px;}
+  canvas{max-height:260px !important;}
+  .fbw{min-width:60px;}
+  .ai-out{font-size:12px;padding:14px;}
+  #gis-toolbar{padding:8px 10px;gap:6px;flex-wrap:wrap;}
+  .modal{padding:18px;width:95vw;}
+  .srch{flex-direction:column;align-items:stretch;}
+  .si{width:100%;}
+  .card .g2{grid-template-columns:1fr;}
+}
+
+@media(max-width:480px){
+  .og,.dp-grid{grid-template-columns:1fr;}
+  .hbtn{display:inline-flex;padding:4px 8px;font-size:11px;}
+  canvas{max-height:220px !important;}
+  .mv{font-size:16px;}
+}
+
+/* ── TOP NAV BAR (always visible on desktop, bottom bar on mobile) ── */
+.topnav{
+  display:none; /* hidden on desktop — sidebar handles it */
+}
+
+/* ── MOBILE BOTTOM NAV ── */
+@media(max-width:768px){
+  /* Remove hamburger dependency — show fixed bottom nav instead */
+  .hamburger{display:none !important;}
+  
+  /* Sidebar becomes hidden on mobile entirely */
+  .sidebar{display:none !important;}
+  .sb-ov{display:none !important;}
+  
+  /* Bottom navigation bar */
+  .bottomnav{
+    position:fixed;
+    bottom:0;left:0;right:0;
+    height:58px;
+    background:rgba(4,9,15,.97);
+    border-top:1px solid rgba(56,189,248,.15);
+    display:flex;
+    align-items:stretch;
+    z-index:400;
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+  }
+  .bnav-it{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+    cursor:pointer;
+    color:rgba(255,255,255,.4);
+    font-size:9px;
+    font-weight:500;
+    letter-spacing:.03em;
+    transition:color .18s, background .18s;
+    border-top:2px solid transparent;
+    padding:4px 2px 6px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .bnav-it:active{background:rgba(56,189,248,.08);}
+  .bnav-it.active{color:#38BDF8;border-top-color:#38BDF8;}
+  .bnav-icon{font-size:18px;line-height:1;}
+  .bnav-label{font-size:9px;text-transform:uppercase;letter-spacing:.04em;}
+  
+  /* Push main content above bottom nav */
+  .main{padding-bottom:70px !important;}
+  #dpage{bottom:58px !important;}
+}
+
+@media(max-width:480px){
+  .bnav-label{display:block;font-size:8px;}
+  .bnav-it{gap:1px;font-size:8px;}
+  .bnav-icon{font-size:16px;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="sb-ov" id="sbov" onclick="closeSB()"></div>
+
+<!-- HEADER -->
+<header class="hdr">
+  <button class="hamburger" onclick="toggleSB()" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="logo">
+    <svg viewBox="0 0 64 28" width="64" height="28" aria-hidden="true">
+      <polyline points="2,24 12,15 22,19 34,7 46,11 58,2" stroke="#38BDF8" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="58" cy="2" r="4" fill="#10B981"/>
+      <circle cx="2"  cy="24" r="2.5" fill="#38BDF8" opacity=".4"/>
+    </svg>
+    <span class="logo-text">Decision<span class="logo-line">Line</span></span>
+  </div>
+  <div class="hdiv"></div>
+  <span class="htag">Data Intelligence for Public Health</span>
+  <div class="hsp"></div>
+  <span id="cbadge" class="cbadge off"><span class="cdot"></span>No data</span>
+  <button class="hbtn" onclick="openOv('apiOv')">🔑 AI Key</button>
+</header>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sb">
+  <div class="nav-sec">Data</div>
+  <div class="nav-it active" id="ni-data"    onclick="go('data')">   <span class="nav-icon">📥</span>Data Source</div>
+  <div class="nav-it"        id="ni-explore" onclick="go('explore')"><span class="nav-icon">🔍</span>Explore</div>
+  <div class="nav-sec">Analyse</div>
+  <div class="nav-it"        id="ni-stats"   onclick="go('stats')">  <span class="nav-icon">📐</span>Statistics</div>
+  <div class="nav-it"        id="ni-viz"     onclick="go('viz')">    <span class="nav-icon">📈</span>Visualise</div>
+  <div class="nav-sec">Output</div>
+  <div class="nav-it"        id="ni-dash"    onclick="go('dash')">   <span class="nav-icon">🗂️</span>Dashboard</div>
+  <div class="nav-it"        id="ni-ai"      onclick="go('ai')">     <span class="nav-icon">🤖</span>AI Insights</div>
+  <div class="nav-it"        id="ni-gis"     onclick="go('gis')">    <span class="nav-icon">🗺️</span>GIS Map</div>
+  <div class="sb-ft">
+    <p>
+      <strong>Wadson Chirwa</strong><br>
+      Environmental Health Technician<br>
+      Deputy IDSR Coordinator<br>
+      Zomba District Health Office<br>
+      Malawi Ministry of Health<br>
+      <a href="mailto:wadsonchirwa2@gmail.com">wadsonchirwa2@gmail.com</a>
+    </p>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- DATA SOURCE -->
+<div class="tab-panel active" id="tp-data">
+  <div class="banner">
+    <h2>Welcome to DecisionLine ⚡</h2>
+    <p>Load any dataset — paste from Excel, fetch a public URL, or pull live data from the World Bank and WHO Global Health Observatory. No proprietary system required.</p>
+    <div class="bsteps">
+      <div class="bst"><div class="bstn">Step 1</div><div class="bstt">Load your data</div></div>
+      <div class="bst"><div class="bstn">Step 2</div><div class="bstt">Explore & filter</div></div>
+      <div class="bst"><div class="bstn">Step 3</div><div class="bstt">Run statistics</div></div>
+      <div class="bst"><div class="bstn">Step 4</div><div class="bstt">Visualise & share</div></div>
+    </div>
+  </div>
+
+  <p class="pg-t">Choose Data Source</p>
+  <p class="pg-s">Select how you want to bring data in — paste from a spreadsheet, fetch from a URL, or query open global health APIs</p>
+
+  <div class="og">
+    <div class="oc" onclick="selM('paste')" id="oc-paste"><div class="oci">📋</div><div class="oct">Paste / CSV</div><div class="ocd">Paste from Excel, Google Sheets, or any CSV</div></div>
+    <div class="oc" onclick="selM('url')"   id="oc-url">  <div class="oci">🔗</div><div class="oct">Fetch URL</div>  <div class="ocd">Load a public CSV directly from a web link</div></div>
+    <div class="oc" onclick="selM('wb')"    id="oc-wb">   <div class="oci">🌍</div><div class="oct">World Bank</div> <div class="ocd">Query open development &amp; health indicators</div></div>
+    <div class="oc" onclick="selM('who')"   id="oc-who">  <div class="oci">🏥</div><div class="oct">WHO GHO</div>    <div class="ocd">Global Health Observatory — mortality &amp; disease</div></div>
+  </div>
+
+  <div id="pn-paste" style="display:none" class="card">
+    <p class="ct">📋 Paste Your Data</p>
+    <div class="hint">Supports CSV, TSV, or semicolon-delimited. First row = headers. Copy directly from Excel or Google Sheets and paste below.</div>
+    <div class="fg"><label class="fl">Paste data here</label>
+    <textarea class="fi" id="pasteArea" rows="9" placeholder="district,period,indicator,value&#10;Zomba,2023Q1,Malaria Cases,4521&#10;Blantyre,2023Q1,Malaria Cases,3812"></textarea></div>
+    <div class="fc g12 mb14">
+      <div class="fg" style="margin:0"><label class="fl">Delimiter</label>
+      <select class="fi" id="pasteDel" style="width:auto">
+        <option value="auto">Auto-detect</option><option value=",">Comma</option>
+        <option value="&#9;">Tab</option><option value=";">Semicolon</option>
+      </select></div>
+    </div>
+    <div class="brow">
+      <button class="btn bp" onclick="parsePaste()">Load Data</button>
+      <button class="btn bo bsm" onclick="fillSample()">Fill sample</button>
+    </div>
+    <div id="pr" style="margin-top:12px"></div>
+  </div>
+
+  <div id="pn-url" style="display:none" class="card">
+    <p class="ct">🔗 Fetch from URL</p>
+    <div class="hint">Enter a direct link to a public CSV file. Works with GitHub raw URLs, WHO datasets, and publicly shared Google Sheets (File → Share → Publish to web → CSV).</div>
+    <div class="fg"><label class="fl">CSV URL</label>
+    <input type="url" class="fi" id="urlIn" placeholder="https://example.com/data.csv"></div>
+    <div class="hint wn">⚠️ URL must be publicly accessible. If blocked by CORS, download the file and use Paste instead.</div>
+    <div class="brow"><button class="btn bp" onclick="fetchURL()">Fetch Data</button></div>
+    <div id="ur" style="margin-top:12px"></div>
+  </div>
+
+  <div id="pn-wb" style="display:none" class="card">
+    <p class="ct">🌍 World Bank Open Data</p>
+    <div class="hint">Free, live data from the World Bank API — no login required. Covers 200+ countries and thousands of indicators.</div>
+    <div class="g2">
+      <div class="fg"><label class="fl">Country (ISO2 code)</label>
+      <input type="text" class="fi" id="wbC" value="MW" placeholder="MW">
+      <p class="tx tm mt4">MW=Malawi · TZ=Tanzania · ZM=Zambia · ZW=Zimbabwe · all=all countries</p></div>
+      <div class="fg"><label class="fl">Indicator</label>
+      <select class="fi" id="wbI">
+        <option value="SH.MLR.INCD.P3">Malaria incidence (per 1,000 pop at risk)</option>
+        <option value="SH.HIV.INCD.ZS">HIV incidence (per 1,000 uninfected)</option>
+        <option value="SH.DYN.MORT">Under-5 mortality rate (per 1,000 live births)</option>
+        <option value="SH.STA.MMRT">Maternal mortality ratio (per 100,000 live births)</option>
+        <option value="SH.IMM.MEAS">Measles immunisation (% children 12-23 months)</option>
+        <option value="SH.ANC.VISIT.ZS">ANC 4+ visits (% of women)</option>
+        <option value="SP.DYN.LE00.IN">Life expectancy at birth (years)</option>
+        <option value="SH.H2O.SMDW.ZS">Safely managed drinking water (%)</option>
+        <option value="SH.XPD.CHEX.PC.CD">Health expenditure per capita (USD)</option>
+        <option value="SH.DYN.NCOM.ZS">Death from non-communicable diseases (%)</option>
+      </select></div>
+      <div class="fg"><label class="fl">Years of data</label>
+      <select class="fi" id="wbY"><option value="10">Last 10 years</option><option value="20">Last 20 years</option><option value="30">Last 30 years</option></select></div>
+    </div>
+    <div class="brow"><button class="btn bp" onclick="fetchWB()">Fetch from World Bank</button></div>
+    <div id="wr" style="margin-top:12px"></div>
+  </div>
+
+  <div id="pn-who" style="display:none" class="card">
+    <p class="ct">🏥 WHO Global Health Observatory</p>
+    <div class="hint">Direct access to the WHO GHO open API — global health statistics updated annually.</div>
+    <div class="g2">
+      <div class="fg"><label class="fl">Indicator</label>
+      <select class="fi" id="whoI">
+        <option value="WHOSIS_000001">Life expectancy at birth (years)</option>
+        <option value="MDG_0000000017">Under-five mortality rate</option>
+        <option value="MALARIA_EST_INCIDENCE">Malaria estimated incidence rate</option>
+        <option value="HIV_0000000026">HIV incidence rate</option>
+        <option value="NUTRITION_ANAEMIA_CHILDREN_PREV">Anaemia in children (prevalence %)</option>
+        <option value="WHS4_100">Births attended by skilled personnel (%)</option>
+        <option value="SA_0000001462">Tobacco use prevalence (%)</option>
+        <option value="NTD_SCHISTO">Schistosomiasis treatment coverage (%)</option>
+      </select></div>
+      <div class="fg"><label class="fl">Country filter (ISO3 — leave blank for global)</label>
+      <input type="text" class="fi" id="whoC" placeholder="MWI">
+      <p class="tx tm mt4">MWI=Malawi · TZA=Tanzania · ZMB=Zambia · ZWE=Zimbabwe</p></div>
+    </div>
+    <div class="brow"><button class="btn bp" onclick="fetchWHO()">Fetch from WHO</button></div>
+    <div id="hr" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- EXPLORE -->
+<div class="tab-panel" id="tp-explore">
+  <p class="pg-t">Explore Data</p>
+  <p class="pg-s">Browse, search, sort, and filter your dataset. Click any column header to sort.</p>
+  <div id="exploreOut"></div>
+</div>
+
+<!-- STATISTICS -->
+<div class="tab-panel" id="tp-stats">
+  <p class="pg-t">Statistics</p>
+  <p class="pg-s">Descriptive statistics, contingency tables, and frequency distributions</p>
+  <div class="stabs">
+    <div class="stab active" id="stb-desc" onclick="setST('desc')">📊 Descriptive</div>
+    <div class="stab"        id="stb-cont" onclick="setST('cont')">📋 Contingency Table</div>
+    <div class="stab"        id="stb-freq" onclick="setST('freq')">📈 Frequency</div>
+  </div>
+  <div id="sd"></div>
+  <div id="sc" style="display:none"></div>
+  <div id="sf" style="display:none"></div>
+</div>
+
+<!-- VISUALISE -->
+<div class="tab-panel" id="tp-viz">
+  <p class="pg-t">Visualise</p>
+  <p class="pg-s">Build any chart from your data — choose type, axes, and aggregation method</p>
+  <div class="card">
+    <p class="ct">Chart Builder</p>
+    <div class="ctypes" id="ctypes">
+      <button class="ctbtn active" data-t="bar"       onclick="setCT('bar')">      📊 Bar</button>
+      <button class="ctbtn"        data-t="line"      onclick="setCT('line')">     📈 Line</button>
+      <button class="ctbtn"        data-t="pie"       onclick="setCT('pie')">      🥧 Pie</button>
+      <button class="ctbtn"        data-t="doughnut"  onclick="setCT('doughnut')"> ⭕ Donut</button>
+      <button class="ctbtn"        data-t="scatter"   onclick="setCT('scatter')">  🔵 Scatter</button>
+      <button class="ctbtn"        data-t="histogram" onclick="setCT('histogram')">📶 Histogram</button>
+    </div>
+    <div class="g2">
+      <div class="fg"><label class="fl" id="xlbl">X Axis / Category</label><select class="fi" id="vx"></select></div>
+      <div class="fg"><label class="fl" id="ylbl">Y Axis / Value</label>   <select class="fi" id="vy"></select></div>
+      <div class="fg"><label class="fl">Aggregate by</label>
+        <select class="fi" id="vagg">
+          <option value="sum">Sum</option><option value="mean">Mean (Average)</option>
+          <option value="count">Count</option><option value="max">Maximum</option><option value="min">Minimum</option>
+        </select></div>
+      <div class="fg"><label class="fl">Chart title (optional)</label><input type="text" class="fi" id="vtitle" placeholder="My Chart"></div>
+    </div>
+    <div class="brow">
+      <button class="btn bp" onclick="buildChart()">Generate Chart</button>
+      <button class="btn bo bsm" onclick="saveVC()">⬇ Save PNG</button>
+    </div>
+  </div>
+  <div id="vizOut"></div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="tab-panel" id="tp-dash">
+  <p class="pg-t">Dashboard</p>
+  <p class="pg-s">Auto-generated overview of your entire dataset with summary metrics, charts, and distributions</p>
+  <div class="brow mb16">
+    <button class="btn bp" onclick="buildDash()">↺ Generate Dashboard</button>
+    <button class="btn bo bsm" onclick="window.print()">🖨 Print</button>
+    <button class="btn bo bsm" onclick="downloadCSV()">⬇ Export CSV</button>
+  </div>
+  <div id="dashOut"></div>
+</div>
+
+<!-- AI INSIGHTS -->
+<div class="tab-panel" id="tp-ai">
+  <p class="pg-t">AI Insights</p>
+  <p class="pg-s">Ask Claude to analyse your data, identify patterns, and generate public health recommendations</p>
+  <div id="aiOut"></div>
+</div>
+
+<!-- GIS MAP -->
+<div class="tab-panel" id="tp-gis">
+  <div id="gis-toolbar" style="padding:12px 18px;background:rgba(4,9,15,.92);border-bottom:1px solid rgba(56,189,248,.1);display:flex;flex-wrap:wrap;gap:10px;align-items:center;flex-shrink:0;z-index:10;">
+    <span style="font-size:15px;font-weight:700;color:#0F172A;white-space:nowrap;">🗺️ GIS Map</span>
+    <div style="flex:1;min-width:180px;max-width:320px;">
+      <input id="gis-search" class="fi" style="margin:0;padding:6px 10px;font-size:13px;" placeholder="🔍 Search country, region, district…" oninput="gisSearch(this.value)">
+    </div>
+    <select id="gis-layer" class="fi" style="margin:0;width:auto;padding:6px 10px;font-size:13px;" onchange="gisSetLayer(this.value)">
+      <option value="osm">🗺 Street Map</option>
+      <option value="sat">🛰 Satellite</option>
+      <option value="dark">🌑 Dark Mode</option>
+      <option value="topo">🏔 Topographic</option>
+    </select>
+    <select id="gis-col" class="fi" style="margin:0;width:auto;padding:6px 10px;font-size:13px;" onchange="gisColorCol(this.value)">
+      <option value="">— Colour by column —</option>
+    </select>
+    <button class="btn bp" style="padding:6px 14px;font-size:12px;" onclick="gisPlotData()">📍 Plot My Data</button>
+    <button class="btn bo" style="padding:6px 14px;font-size:12px;" onclick="gisClear()">✕ Clear</button>
+    <span id="gis-status" style="font-size:11px;color:#64748B;white-space:nowrap;"></span>
+  </div>
+  <div style="position:relative;flex:1;min-height:0;">
+    <div id="gis-map" style="width:100%;height:100%;min-height:400px;"></div>
+    <!-- Animated pulse legend -->
+    <div id="gis-legend" style="position:absolute;bottom:24px;left:14px;z-index:800;background:rgba(8,21,41,.88);color:#fff;border-radius:10px;padding:12px 16px;font-size:12px;min-width:140px;display:none;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.12);">
+      <div style="font-weight:700;margin-bottom:8px;color:#38BDF8;">📊 Legend</div>
+      <div id="gis-legend-items"></div>
+    </div>
+    <!-- Live counter badge -->
+    <div id="gis-counter" style="position:absolute;top:12px;right:12px;z-index:800;background:rgba(8,21,41,.88);color:#34D399;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;display:none;border:1px solid rgba(16,185,129,.3);backdrop-filter:blur(4px);">
+      <span id="gis-count-n">0</span> locations plotted
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="ov" id="apiOv" onclick="if(event.target===this)closeOv('apiOv')">
+  <div class="modal">
+    <p class="modal-t">🔑 Anthropic API Key</p>
+    <p class="ts tm mb14">Required for AI Insights. Free at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>. Stored only in your browser.</p>
+    <div class="fg"><label class="fl">API Key</label><input type="password" class="fi" id="akin" placeholder="sk-ant-api03-…"></div>
+    <div class="brow">
+      <button class="btn bp" onclick="saveKey()">Save</button>
+      <button class="btn bo" onclick="closeOv('apiOv')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- DATA SOURCE PAGE (full-screen) -->
+<div id="dpage">
+  <div class="dp-hdr" style="padding:12px 28px;min-height:auto;">
+    <span style="font-size:13px;color:rgba(255,255,255,.4);">📥 &nbsp;Data Source</span>
+    <button class="dp-back" id="dpBack" onclick="closeDPage()" style="display:none">← Back to App</button>
+  </div>
+  <div class="dp-body">
+    <p class="dp-title">Load Your Data</p>
+    <p class="dp-sub">Choose a data source to get started — paste from any spreadsheet, fetch from a public URL, or query live open health databases from the World Bank and WHO.</p>
+    <div class="dp-step">
+      <div class="dp-st"><div class="dp-stn">Step 1</div><div class="dp-stt">Load your data here</div></div>
+      <div class="dp-st"><div class="dp-stn">Step 2</div><div class="dp-stt">Explore &amp; filter</div></div>
+      <div class="dp-st"><div class="dp-stn">Step 3</div><div class="dp-stt">Run statistics</div></div>
+      <div class="dp-st"><div class="dp-stn">Step 4</div><div class="dp-stt">Visualise &amp; share</div></div>
+    </div>
+    <div class="dp-grid">
+      <div class="dp-oc" onclick="dpSel('paste')" id="dpc-paste">
+        <div class="dp-oci">📋</div>
+        <div class="dp-oct">Paste / CSV</div>
+        <div class="dp-ocd">Paste directly from Excel, Google Sheets, or any CSV file</div>
+      </div>
+      <div class="dp-oc" onclick="dpSel('url')" id="dpc-url">
+        <div class="dp-oci">🔗</div>
+        <div class="dp-oct">Fetch from URL</div>
+        <div class="dp-ocd">Load a public CSV from any web link automatically</div>
+      </div>
+      <div class="dp-oc" onclick="dpSel('wb')" id="dpc-wb">
+        <div class="dp-oci">🌍</div>
+        <div class="dp-oct">World Bank Open Data</div>
+        <div class="dp-ocd">Query live health &amp; development indicators — no login needed</div>
+      </div>
+      <div class="dp-oc" onclick="dpSel('who')" id="dpc-who">
+        <div class="dp-oci">🏥</div>
+        <div class="dp-oct">WHO Global Health Observatory</div>
+        <div class="dp-ocd">Global mortality, disease burden and health statistics</div>
+      </div>
+    </div>
+
+    <!-- PASTE PANEL -->
+    <div id="dpn-paste" style="display:none" class="dp-panel">
+      <p class="ct">📋 Paste Your Data</p>
+      <div class="hint">Supports CSV, TSV, or semicolon-delimited. First row must be column headers. Copy directly from Excel or Google Sheets and paste below.</div>
+      <div class="fg"><label class="fl">Paste data here</label>
+      <textarea class="fi" id="dp-pa" rows="8" placeholder="district,period,indicator,value&#10;Zomba,2023Q1,Malaria Cases,4521&#10;Blantyre,2023Q1,Malaria Cases,3812"></textarea></div>
+      <div class="fc g12 mb14">
+        <div class="fg" style="margin:0"><label class="fl">Delimiter</label>
+        <select class="fi" id="dp-pd" style="width:auto">
+          <option value="auto">Auto-detect</option><option value=",">Comma</option>
+          <option value="&#9;">Tab</option><option value=";">Semicolon</option>
+        </select></div>
+      </div>
+      <div class="brow">
+        <button class="btn bp" onclick="dpParse()">Load Data →</button>
+        <button class="btn bo bsm" style="color:rgba(255,255,255,.55);border-color:rgba(255,255,255,.2)" onclick="dpSample()">Fill sample</button>
+      </div>
+      <div id="dp-pr" style="margin-top:12px"></div>
+    </div>
+
+    <!-- URL PANEL -->
+    <div id="dpn-url" style="display:none" class="dp-panel">
+      <p class="ct">🔗 Fetch from URL</p>
+      <div class="hint">Enter a direct link to a public CSV file. Works with GitHub raw URLs and publicly shared Google Sheets (File → Share → Publish to web → CSV).</div>
+      <div class="fg"><label class="fl">CSV URL</label>
+      <input type="url" class="fi" id="dp-ui" placeholder="https://example.com/data.csv"></div>
+      <div class="hint wn">⚠️ URL must be publicly accessible. If blocked by CORS, download the file and use Paste instead.</div>
+      <div class="brow"><button class="btn bp" onclick="dpURL()">Fetch Data →</button></div>
+      <div id="dp-ur" style="margin-top:12px"></div>
+    </div>
+
+    <!-- WORLD BANK PANEL -->
+    <div id="dpn-wb" style="display:none" class="dp-panel">
+      <p class="ct">🌍 World Bank Open Data</p>
+      <div class="hint">Free, live data from the World Bank API — no login required. Covers 200+ countries.</div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Country (ISO2 code)</label>
+        <input type="text" class="fi" id="dp-wc" value="MW" placeholder="MW">
+        <p class="tx mt4">MW=Malawi · TZ=Tanzania · ZM=Zambia · all=all countries</p></div>
+        <div class="fg"><label class="fl">Indicator</label>
+        <select class="fi" id="dp-wi">
+          <option value="SH.MLR.INCD.P3">Malaria incidence (per 1,000 pop at risk)</option>
+          <option value="SH.HIV.INCD.ZS">HIV incidence (per 1,000 uninfected)</option>
+          <option value="SH.DYN.MORT">Under-5 mortality rate (per 1,000 live births)</option>
+          <option value="SH.STA.MMRT">Maternal mortality ratio (per 100,000)</option>
+          <option value="SH.IMM.MEAS">Measles immunisation (% children 12-23m)</option>
+          <option value="SH.ANC.VISIT.ZS">ANC 4+ visits (% of women)</option>
+          <option value="SP.DYN.LE00.IN">Life expectancy at birth (years)</option>
+          <option value="SH.H2O.SMDW.ZS">Safely managed drinking water (%)</option>
+          <option value="SH.XPD.CHEX.PC.CD">Health expenditure per capita (USD)</option>
+          <option value="SH.DYN.NCOM.ZS">Death from NCDs (% of total deaths)</option>
+        </select></div>
+        <div class="fg"><label class="fl">Years of data</label>
+        <select class="fi" id="dp-wy"><option value="10">Last 10 years</option><option value="20">Last 20 years</option><option value="30">Last 30 years</option></select></div>
+      </div>
+      <div class="brow"><button class="btn bp" onclick="dpWB()">Fetch from World Bank →</button></div>
+      <div id="dp-wr" style="margin-top:12px"></div>
+    </div>
+
+    <!-- WHO PANEL -->
+    <div id="dpn-who" style="display:none" class="dp-panel">
+      <p class="ct">🏥 WHO Global Health Observatory</p>
+      <div class="hint">Direct access to WHO GHO open API — global health statistics updated annually.</div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Indicator</label>
+        <select class="fi" id="dp-whi">
+          <option value="WHOSIS_000001">Life expectancy at birth (years)</option>
+          <option value="MDG_0000000017">Under-five mortality rate</option>
+          <option value="MALARIA_EST_INCIDENCE">Malaria estimated incidence rate</option>
+          <option value="HIV_0000000026">HIV incidence rate</option>
+          <option value="NUTRITION_ANAEMIA_CHILDREN_PREV">Anaemia in children (prevalence %)</option>
+          <option value="WHS4_100">Births attended by skilled personnel (%)</option>
+          <option value="SA_0000001462">Tobacco use prevalence (%)</option>
+          <option value="NTD_SCHISTO">Schistosomiasis treatment coverage (%)</option>
+        </select></div>
+        <div class="fg"><label class="fl">Country ISO3 (leave blank for global)</label>
+        <input type="text" class="fi" id="dp-whc" placeholder="MWI">
+        <p class="tx mt4">MWI=Malawi · TZA=Tanzania · ZMB=Zambia · ZWE=Zimbabwe</p></div>
+      </div>
+      <div class="brow"><button class="btn bp" onclick="dpWHO()">Fetch from WHO →</button></div>
+      <div id="dp-hr" style="margin-top:12px"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const COLORS=['#0EA5E9','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#06B6D4','#84CC16','#F97316','#6366F1'];
+
+const S={
+  headers:[],rows:[],types:{},
+  charts:{},vizType:'bar',stab:'desc',
+  apiKey:localStorage.getItem('dl_key')||'',
+  sortCol:null,sortDir:1,searchQ:'',page:0,pageSize:50
+};
+
+/* ── MOBILE ─────────────────────────────────────── */
+function toggleSB(){
+  var sb=document.getElementById('sb');
+  var ov=document.getElementById('sbov');
+  var hb=document.querySelector('.hamburger');
+  var opening=!sb.classList.contains('is-open');
+  sb.classList.toggle('is-open',opening);
+  ov.style.display='block';
+  // force reflow
+  ov.offsetHeight;
+  ov.classList.toggle('show',opening);
+  if(hb) hb.classList.toggle('is-open',opening);
+}
+function closeSB(){
+  var sb=document.getElementById('sb');
+  var ov=document.getElementById('sbov');
+  var hb=document.querySelector('.hamburger');
+  sb.classList.remove('is-open');
+  ov.classList.remove('show');
+  if(hb) hb.classList.remove('is-open');
+  setTimeout(function(){
+    if(!ov.classList.contains('show')) ov.style.display='none';
+  },300);
+}
+
+/* ── DATA INGESTION ─────────────────────────────── */
+function selM(m){
+  ['paste','url','wb','who'].forEach(x=>{
+    document.getElementById('oc-'+x).classList.toggle('sel',x===m);
+    document.getElementById('pn-'+x).style.display=x===m?'block':'none';
+  });
+}
+
+function detectDelim(t){
+  const l=t.split('\n')[0];
+  const tabs=(l.match(/\t/g)||[]).length,commas=(l.match(/,/g)||[]).length,semi=(l.match(/;/g)||[]).length;
+  return tabs>=commas&&tabs>=semi?'\t':semi>commas?';':',';
+}
+
+function loadCSV(text,delim){
+  const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(lines.length<2)throw new Error('Need at least a header row and one data row');
+  const pr=l=>l.split(delim).map(c=>c.trim().replace(/^"|"$/g,''));
+  S.headers=pr(lines[0]);
+  S.rows=lines.slice(1).map(l=>{const c=pr(l);const o={};S.headers.forEach((h,i)=>o[h]=c[i]??'');return o;});
+  S.types=detectTypes();
+}
+
+function detectTypes(){
+  const t={};
+  S.headers.forEach(h=>{
+    const vals=S.rows.map(r=>r[h]).filter(v=>v!==''&&v!=null);
+    const n=vals.length||1;
+    const nc=vals.filter(v=>!isNaN(parseFloat(v))&&isFinite(v)).length;
+    const dc=vals.filter(v=>isNaN(Number(v))&&!isNaN(Date.parse(v))).length;
+    t[h]=nc/n>0.8?'numeric':dc/n>0.5?'date':'categorical';
+  });
+  return t;
+}
+
+function parsePaste(){
+  const raw=document.getElementById('pasteArea').value.trim();
+  const del=document.getElementById('pasteDel').value;
+  const el=document.getElementById('pr');
+  if(!raw){el.innerHTML=hint('Nothing pasted','er');return;}
+  try{
+    loadCSV(raw,del==='auto'?detectDelim(raw):del);
+    el.innerHTML=hint('✅ Loaded '+S.rows.length+' rows × '+S.headers.length+' columns','ok');
+    afterLoad();
+  }catch(e){el.innerHTML=hint('❌ '+e.message,'er');}
+}
+
+function fillSample(){
+  document.getElementById('pasteArea').value=`District,Period,Indicator,Value,Target,Sex
+Zomba,2023Q1,Malaria Cases,4521,5000,Both
+Blantyre,2023Q1,Malaria Cases,3812,4500,Both
+Lilongwe,2023Q1,Malaria Cases,6104,6000,Both
+Mzuzu,2023Q1,Malaria Cases,1187,1500,Both
+Kasungu,2023Q1,Malaria Cases,2744,3000,Both
+Mangochi,2023Q1,Malaria Cases,7032,6500,Both
+Zomba,2023Q2,Malaria Cases,2987,5000,Both
+Blantyre,2023Q2,Malaria Cases,2441,4500,Both
+Lilongwe,2023Q2,Malaria Cases,4823,6000,Both
+Zomba,2023Q1,ANC 1st Visit,2734,3000,Female
+Blantyre,2023Q1,ANC 1st Visit,3021,3200,Female
+Lilongwe,2023Q1,ANC 1st Visit,4987,5100,Female
+Mzuzu,2023Q1,ANC 1st Visit,1312,1400,Female
+Zomba,2023Q1,HIV Tests,1143,1500,Both
+Blantyre,2023Q1,HIV Tests,1987,2000,Both
+Lilongwe,2023Q1,HIV Tests,3201,3500,Both
+Zomba,2023Q1,Deliveries,1755,1900,Female
+Blantyre,2023Q1,Deliveries,2340,2400,Female
+Lilongwe,2023Q1,Deliveries,3801,3800,Female
+Mzuzu,2023Q1,Deliveries,855,1000,Female`;
+  selM('paste');
+}
+
+async function fetchURL(){
+  const url=document.getElementById('urlIn').value.trim();
+  const el=document.getElementById('ur');
+  if(!url){el.innerHTML=hint('Enter a URL','er');return;}
+  el.innerHTML=spinner();
+  try{
+    const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(url));
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const txt=await r.text();
+    loadCSV(txt,detectDelim(txt));
+    el.innerHTML=hint('✅ Loaded '+S.rows.length+' rows','ok');
+    afterLoad();
+  }catch(e){el.innerHTML=hint('❌ '+e.message+'. Try downloading and using Paste instead.','er');}
+}
+
+async function fetchWB(){
+  const country=document.getElementById('wbC').value.trim()||'MW';
+  const indicator=document.getElementById('wbI').value;
+  const years=document.getElementById('wbY').value;
+  const el=document.getElementById('wr');
+  el.innerHTML=spinner();
+  try{
+    const r=await fetch(`https://api.worldbank.org/v2/country/${country}/indicator/${indicator}?format=json&mrv=${years}&per_page=${years}`);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    const arr=(data[1]||[]).filter(d=>d.value!==null);
+    if(!arr.length)throw new Error('No data returned — try a different country or indicator');
+    S.headers=['Country','CountryCode','Indicator','Year','Value'];
+    S.rows=arr.map(d=>({Country:d.country?.value||country,CountryCode:d.countryiso3code||country,Indicator:d.indicator?.value||indicator,Year:d.date,Value:d.value}));
+    S.types=detectTypes();
+    el.innerHTML=hint('✅ Loaded '+S.rows.length+' records from World Bank','ok');
+    afterLoad();
+  }catch(e){el.innerHTML=hint('❌ World Bank: '+e.message,'er');}
+}
+
+async function fetchWHO(){
+  const ind=document.getElementById('whoI').value;
+  const country=document.getElementById('whoC').value.trim();
+  const el=document.getElementById('hr');
+  el.innerHTML=spinner();
+  try{
+    let url=`https://ghoapi.azureedge.net/api/${ind}?$top=300`;
+    if(country)url+=`&$filter=SpatialDim eq '${country}'`;
+    const r=await fetch(url);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    const arr=(data.value||[]).filter(d=>d.NumericValue!=null);
+    if(!arr.length)throw new Error('No numeric data — try leaving country blank for global data');
+    S.headers=['Country','Year','Sex','Indicator','Value','Low','High'];
+    S.rows=arr.map(d=>({Country:d.SpatialDim||'',Year:String(d.TimeDim||''),Sex:d.Dim1||'Both sexes',Indicator:ind,Value:d.NumericValue,Low:d.Low||'',High:d.High||''}));
+    S.types=detectTypes();
+    el.innerHTML=hint('✅ Loaded '+S.rows.length+' records from WHO GHO','ok');
+    afterLoad();
+  }catch(e){el.innerHTML=hint('❌ WHO: '+e.message,'er');}
+}
+
+function afterLoad(){
+  setBadge(true,S.rows.length.toLocaleString()+' rows · '+S.headers.length+' cols');
+  popViz();
+  toast('Data loaded — '+S.rows.length+' rows, '+S.headers.length+' columns','ok');
+  setTimeout(()=>go('explore'),600);
+}
+
+/* ── EXPLORE ────────────────────────────────────── */
+function getFiltered(){
+  let rows=[...S.rows];
+  if(S.searchQ){const q=S.searchQ.toLowerCase();rows=rows.filter(r=>S.headers.some(h=>String(r[h]).toLowerCase().includes(q)));}
+  if(S.sortCol){
+    const c=S.sortCol,d=S.sortDir,num=S.types[c]==='numeric';
+    rows.sort((a,b)=>{const va=num?parseFloat(a[c])||0:String(a[c]);const vb=num?parseFloat(b[c])||0:String(b[c]);return d*(va>vb?1:va<vb?-1:0);});
+  }
+  return rows;
+}
+
+function renderExplore(){
+  const el=document.getElementById('exploreOut');
+  if(!S.rows.length){el.innerHTML=noData();return;}
+  S.page=0;
+  const filtered=getFiltered();
+  const numC=S.headers.filter(h=>S.types[h]==='numeric').length;
+  const catC=S.headers.filter(h=>S.types[h]==='categorical').length;
+  const miss=S.rows.reduce((s,r)=>s+S.headers.filter(h=>r[h]===''||r[h]==null).length,0);
+
+  el.innerHTML=`
+  <div class="g4 mb16">
+    <div class="met"><div class="ml">Total Rows</div><div class="mv">${S.rows.length.toLocaleString()}</div></div>
+    <div class="met gn"><div class="ml">Columns</div><div class="mv">${S.headers.length}</div><div class="ms">${numC} numeric · ${catC} categorical</div></div>
+    <div class="met am"><div class="ml">Missing Values</div><div class="mv">${miss.toLocaleString()}</div></div>
+    <div class="met pu"><div class="ml">Showing</div><div class="mv" id="showC">${Math.min(S.pageSize,filtered.length)}</div><div class="ms">of ${filtered.length}</div></div>
+  </div>
+  <div class="card">
+    <div class="fb2 mb14">
+      <div class="fc g8">
+        <input type="text" class="si" id="si" placeholder="Search all columns…" oninput="doSearch(this.value)">
+        <button class="btn bo bsm" onclick="downloadCSV()">⬇ CSV</button>
+      </div>
+      <div class="fc g8" id="pc"></div>
+    </div>
+    <div class="tw">
+      <table class="dt">
+        <thead><tr>
+          <th style="width:36px">#</th>
+          ${S.headers.map(h=>`<th onclick="sortBy('${h}')">${h} <span class="${S.types[h]==='numeric'?'ctn':S.types[h]==='date'?'ctd':'ctc'}">${S.types[h]}</span></th>`).join('')}
+        </tr></thead>
+        <tbody id="eb"></tbody>
+      </table>
+    </div>
+  </div>`;
+  renderRows();
+}
+
+function renderRows(){
+  const f=getFiltered(),st=S.page*S.pageSize,pr=f.slice(st,st+S.pageSize);
+  const b=document.getElementById('eb');if(!b)return;
+  b.innerHTML=pr.map((r,i)=>`<tr><td class="ts tm">${st+i+1}</td>${S.headers.map(h=>`<td class="${S.types[h]==='numeric'?'mn':''}">${r[h]??''}</td>`).join('')}</tr>`).join('');
+  const pc=document.getElementById('pc');if(!pc)return;
+  const tp=Math.ceil(f.length/S.pageSize);
+  pc.innerHTML=tp>1?`<button class="btn bo bsm" onclick="chPg(-1)" ${S.page===0?'disabled':''}>‹</button><span class="ts tm">Page ${S.page+1}/${tp}</span><button class="btn bo bsm" onclick="chPg(1)" ${S.page>=tp-1?'disabled':''}>›</button>`:'';
+  const sc=document.getElementById('showC');if(sc)sc.textContent=Math.min((S.page+1)*S.pageSize,f.length);
+}
+
+function doSearch(q){S.searchQ=q;S.page=0;renderRows();}
+function sortBy(c){S.sortCol===c?S.sortDir*=-1:(S.sortCol=c,S.sortDir=1);renderRows();}
+function chPg(d){S.page+=d;renderRows();}
+
+/* ── STATISTICS ─────────────────────────────────── */
+function setST(t){
+  S.stab=t;
+  ['desc','cont','freq'].forEach(x=>{
+    document.getElementById('stb-'+x).classList.toggle('active',x===t);
+    document.getElementById(x==='desc'?'sd':x==='cont'?'sc':'sf').style.display=x===t?'block':'none';
+  });
+  if(t==='desc')renderDesc();
+  if(t==='cont')renderContUI();
+  if(t==='freq')renderFreqUI();
+}
+
+function cs(col){
+  const vs=S.rows.map(r=>parseFloat(r[col])).filter(v=>!isNaN(v));
+  if(!vs.length)return null;
+  const n=vs.length,sum=vs.reduce((a,b)=>a+b,0),mean=sum/n;
+  const sorted=[...vs].sort((a,b)=>a-b);
+  const min=sorted[0],max=sorted[n-1];
+  const mid=Math.floor(n/2);
+  const median=n%2?sorted[mid]:(sorted[mid-1]+sorted[mid])/2;
+  const q1=sorted[Math.floor(n*0.25)],q3=sorted[Math.floor(n*0.75)];
+  const variance=vs.reduce((s,v)=>s+Math.pow(v-mean,2),0)/n,sd=Math.sqrt(variance);
+  const cv=mean!==0?(sd/mean)*100:0;
+  const freq={};vs.forEach(v=>{const k=Math.round(v);freq[k]=(freq[k]||0)+1;});
+  const mode=+Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
+  const skew=sd>0?vs.reduce((s,v)=>s+Math.pow((v-mean)/sd,3),0)/n:0;
+  const kurt=sd>0?vs.reduce((s,v)=>s+Math.pow((v-mean)/sd,4),0)/n-3:0;
+  return{n,miss:S.rows.length-n,sum,mean,median,mode,min,max,range:max-min,q1,q3,iqr:q3-q1,sd,variance,cv,skew,kurt};
+}
+
+function ff(v,d=2){if(v==null)return'—';return Math.abs(v)>=1000?Math.round(v).toLocaleString():parseFloat(v.toFixed(d)).toLocaleString();}
+
+function renderDesc(){
+  const el=document.getElementById('sd');
+  if(!S.rows.length){el.innerHTML=noData();return;}
+  const numC=S.headers.filter(h=>S.types[h]==='numeric');
+  if(!numC.length){el.innerHTML=hint('No numeric columns found in this dataset.','wn');return;}
+  const stats=numC.map(h=>({h,s:cs(h)})).filter(x=>x.s);
+  const maxM=Math.max(...stats.map(x=>x.s.mean));
+
+  el.innerHTML=`
+  <div class="card">
+    <p class="ct">📐 Descriptive Statistics — Numeric Columns</p>
+    <div class="tw"><table class="dt">
+      <thead><tr><th>Column</th><th>N</th><th>Missing</th><th>Mean</th><th>Median</th><th>Mode</th><th>Std Dev</th><th>Variance</th><th>CV%</th><th>Min</th><th>Q1</th><th>Q3</th><th>Max</th><th>Range</th><th>IQR</th><th>Skewness</th><th>Kurtosis</th></tr></thead>
+      <tbody>${stats.map(({h,s})=>`<tr>
+        <td class="fw6">${h}</td>
+        <td class="mn">${s.n}</td>
+        <td class="mn">${s.miss>0?`<span class="bdg ber">${s.miss}</span>`:'<span class="bdg bok">0</span>'}</td>
+        <td class="mn fw6">${ff(s.mean)}</td>
+        <td class="mn">${ff(s.median)}</td>
+        <td class="mn">${ff(s.mode)}</td>
+        <td class="mn">${ff(s.sd)}</td>
+        <td class="mn">${ff(s.variance,0)}</td>
+        <td class="mn"><span class="bdg ${s.cv<15?'bok':s.cv<35?'bwn':'ber'}">${ff(s.cv,1)}%</span></td>
+        <td class="mn">${ff(s.min)}</td><td class="mn">${ff(s.q1)}</td><td class="mn">${ff(s.q3)}</td><td class="mn">${ff(s.max)}</td>
+        <td class="mn">${ff(s.range)}</td><td class="mn">${ff(s.iqr)}</td>
+        <td class="mn"><span class="bdg ${Math.abs(s.skew)<0.5?'bok':s.skew>0?'bwn':'bin'}">${s.skew>0.5?'Right ↗':s.skew<-0.5?'Left ↙':'Symmetric'}</span></td>
+        <td class="mn">${ff(s.kurt)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+  </div>
+  <div class="card">
+    <p class="ct">📊 Mean ± SD Comparison</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${stats.map(({h,s},i)=>{
+        const pct=maxM>0?(s.mean/maxM*100).toFixed(1):0;
+        return `<div>
+          <div class="fb2 mb4"><span class="ts fw6">${h}</span><span class="ts tm" style="font-family:'IBM Plex Mono',monospace">${ff(s.mean)} ± ${ff(s.sd)}</span></div>
+          <div class="pw"><div class="pb" data-w="${pct}%" style="width:0%;background:${COLORS[i%COLORS.length]}"></div></div>
+          <div class="fc g8 mt4"><span class="tx tm">Min: ${ff(s.min)}</span><span class="tx tm" style="margin-left:auto">Max: ${ff(s.max)}</span></div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+  <div class="card">
+    <p class="ct">📖 How to Read These Statistics</p>
+    <div class="g2" style="font-size:12.5px;color:var(--t2);line-height:1.75">
+      <div>
+        <p class="fw6 mb8" style="color:var(--t1)">Central Tendency</p>
+        <p><strong>Mean</strong> — arithmetic average; affected by extreme values</p>
+        <p><strong>Median</strong> — middle value; more robust to outliers</p>
+        <p><strong>Mode</strong> — most frequently occurring value</p>
+        <p class="fw6 mb8 mt16" style="color:var(--t1)">Spread &amp; Variability</p>
+        <p><strong>SD</strong> — average distance of observations from the mean</p>
+        <p><strong>CV%</strong> — &lt;15% low, 15–35% moderate, &gt;35% high variation</p>
+        <p><strong>IQR</strong> — range of the middle 50% (robust spread measure)</p>
+      </div>
+      <div>
+        <p class="fw6 mb8" style="color:var(--t1)">Distribution Shape</p>
+        <p><strong>Right-skewed</strong> — a few very high values pull the mean above the median. Common in disease counts (malaria, TB cases)</p>
+        <p><strong>Left-skewed</strong> — a few very low values pull mean below median</p>
+        <p><strong>Kurtosis &gt;0</strong> — heavier tails; more extreme values than normal</p>
+        <p class="fw6 mb8 mt16" style="color:var(--t1)">Public Health Tip</p>
+        <p>When <strong>Mean &gt; Median</strong>, report the median in district comparisons for a fairer picture</p>
+      </div>
+    </div>
+  </div>`;
+  animateBars();
+}
+
+function renderContUI(){
+  const el=document.getElementById('sc');
+  if(!S.rows.length){el.innerHTML=noData();return;}
+  const cats=S.headers.filter(h=>S.types[h]!=='numeric');
+  if(cats.length<2){el.innerHTML=hint('Need at least 2 categorical columns for a contingency table.','wn');return;}
+  el.innerHTML=`
+  <div class="card mb16">
+    <p class="ct">⚙️ Contingency Table Settings</p>
+    <div class="g2">
+      <div class="fg"><label class="fl">Row variable</label><select class="fi" id="cr">${cats.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="fg"><label class="fl">Column variable</label><select class="fi" id="cc">${cats.map((c,i)=>`<option ${i===1?'selected':''}>${c}</option>`).join('')}</select></div>
+      <div class="fg"><label class="fl">Display in cells</label>
+        <select class="fi" id="cs2">
+          <option value="n">Count only</option>
+          <option value="rp">Count + Row %</option>
+          <option value="cp">Count + Col %</option>
+          <option value="all" selected>Count + Row% + Col% + Total%</option>
+        </select></div>
+    </div>
+    <div class="brow"><button class="btn bp" onclick="buildCont()">Build Table</button></div>
+  </div>
+  <div id="co"></div>`;
+}
+
+function buildCont(){
+  const rv=document.getElementById('cr').value,cv2=document.getElementById('cc').value,show=document.getElementById('cs2').value;
+  const el=document.getElementById('co');
+  if(rv===cv2){el.innerHTML=hint('Choose two different columns','er');return;}
+  const rvs=[...new Set(S.rows.map(r=>r[rv]))].filter(Boolean).sort();
+  const cvs=[...new Set(S.rows.map(r=>r[cv2]))].filter(Boolean).sort();
+  const mx={};rvs.forEach(r=>{mx[r]={};cvs.forEach(c=>mx[r][c]=0);});
+  S.rows.forEach(r=>{if(mx[r[rv]]&&mx[r[rv]][r[cv2]]!==undefined)mx[r[rv]][r[cv2]]++;});
+  const rt={};rvs.forEach(r=>rt[r]=cvs.reduce((s,c)=>s+mx[r][c],0));
+  const ct={};cvs.forEach(c=>ct[c]=rvs.reduce((s,r)=>s+mx[r][c],0));
+  const grand=rvs.reduce((s,r)=>s+rt[r],0);
+  let chi2=0;
+  rvs.forEach(r=>cvs.forEach(c=>{const o=mx[r][c],e=(rt[r]*ct[c])/grand;if(e>0)chi2+=Math.pow(o-e,2)/e;}));
+  const df=(rvs.length-1)*(cvs.length-1);
+  const {p,sig,note}=chi2p(chi2,df);
+
+  const cell=(r,c)=>{
+    const n=mx[r][c],rp=rt[r]?(n/rt[r]*100).toFixed(1):0,cp=ct[c]?(n/ct[c]*100).toFixed(1):0,tp=grand?(n/grand*100).toFixed(1):0;
+    let h=`<span class="cnt">${n}</span>`;
+    if(show==='rp'||show==='all')h+=`<span class="pct">Row: ${rp}%</span>`;
+    if(show==='cp'||show==='all')h+=`<span class="pct">Col: ${cp}%</span>`;
+    if(show==='all')h+=`<span class="pct">Tot: ${tp}%</span>`;
+    return h;
+  };
+
+  el.innerHTML=`<div class="card">
+    <p class="ct">📋 Contingency Table: <em>${rv}</em> × <em>${cv2}</em> &nbsp;<span class="bdg bin">n = ${grand}</span></p>
+    <div class="tw"><table class="ctbl">
+      <thead><tr>
+        <th class="rlh">${rv} \\ ${cv2}</th>
+        ${cvs.map(c=>`<th>${c}</th>`).join('')}
+        <th style="background:#1E3A5F">Row Total</th>
+      </tr></thead>
+      <tbody>
+        ${rvs.map(r=>`<tr>
+          <td class="rl">${r}</td>
+          ${cvs.map(c=>`<td>${cell(r,c)}</td>`).join('')}
+          <td class="tot"><span class="cnt">${rt[r]}</span><span class="pct">${(rt[r]/grand*100).toFixed(1)}%</span></td>
+        </tr>`).join('')}
+        <tr>
+          <td class="rl" style="background:#E0F2FE">Column Total</td>
+          ${cvs.map(c=>`<td class="tot"><span class="cnt">${ct[c]}</span><span class="pct">${(ct[c]/grand*100).toFixed(1)}%</span></td>`).join('')}
+          <td class="grd">${grand}</td>
+        </tr>
+      </tbody>
+    </table></div>
+    <div class="chi-box">
+      <div class="chi-s"><div class="chi-v">${chi2.toFixed(3)}</div><div class="chi-l">χ² Statistic</div></div>
+      <div class="chi-s"><div class="chi-v">${df}</div><div class="chi-l">Degrees of Freedom</div></div>
+      <div class="chi-s"><div class="chi-v">${p}</div><div class="chi-l">p-value (approx)</div></div>
+      <div class="chi-i"><strong>${sig?'✅ Statistically significant association':'⚠️ No significant association detected'}</strong><br>${note}</div>
+    </div>
+  </div>`;
+}
+
+function chi2p(x,df){
+  const cv={1:[3.84,6.63,10.83],2:[5.99,9.21,13.82],3:[7.81,11.34,16.27],4:[9.49,13.28,18.47],5:[11.07,15.09,20.52]};
+  const c=cv[Math.min(df,5)]||cv[5];
+  let p,sig=false;
+  if(x>c[2]){p='<0.001';sig=true;}else if(x>c[1]){p='<0.01';sig=true;}else if(x>c[0]){p='<0.05';sig=true;}else p='>0.05';
+  const note=sig?`A statistically significant association exists between the two variables (p ${p}). This pattern is unlikely due to chance alone.`:`No statistically significant association found (p ${p}). The variables appear independent in this dataset.`;
+  return{p,sig,note};
+}
+
+function renderFreqUI(){
+  const el=document.getElementById('sf');
+  if(!S.rows.length){el.innerHTML=noData();return;}
+  const cats=S.headers.filter(h=>S.types[h]!=='numeric');
+  el.innerHTML=`
+  <div class="card mb16">
+    <p class="ct">⚙️ Frequency Settings</p>
+    <div class="g2">
+      <div class="fg"><label class="fl">Variable</label><select class="fi" id="fv">${cats.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="fg"><label class="fl">Sort by</label>
+        <select class="fi" id="fs"><option value="n">Frequency (high → low)</option><option value="a">Alphabetical</option></select></div>
+    </div>
+    <div class="brow"><button class="btn bp" onclick="buildFreq()">Build Table</button></div>
+  </div><div id="fo"></div>`;
+}
+
+function buildFreq(){
+  const col=document.getElementById('fv').value,sort=document.getElementById('fs').value;
+  const freq={};S.rows.forEach(r=>{const v=r[col]||'(blank)';freq[v]=(freq[v]||0)+1;});
+  let e=Object.entries(freq);
+  sort==='n'?e.sort((a,b)=>b[1]-a[1]):e.sort((a,b)=>a[0].localeCompare(b[0]));
+  const total=e.reduce((s,x)=>s+x[1],0),maxN=Math.max(...e.map(x=>x[1]));
+  let cum=0;
+  document.getElementById('fo').innerHTML=`<div class="card">
+    <p class="ct">📊 Frequency Table: ${col} &nbsp;<span class="bdg bin">n = ${total}</span></p>
+    <div class="tw"><table class="dt">
+      <thead><tr><th>${col}</th><th>Count (n)</th><th>Percent (%)</th><th>Cumulative %</th><th style="min-width:180px">Distribution</th></tr></thead>
+      <tbody>${e.map(([v,n])=>{const pct=(n/total*100).toFixed(1);cum+=+pct;return`<tr>
+        <td>${v}</td>
+        <td class="mn fw6">${n.toLocaleString()}</td>
+        <td class="mn">${pct}%</td>
+        <td class="mn tm">${Math.min(cum,100).toFixed(1)}%</td>
+        <td><div class="fc g8"><div class="fbw"><div class="fb" data-w="${(n/maxN*100).toFixed(1)}%" style="width:0%"></div></div></div></td>
+      </tr>`;}).join('')}</tbody>
+      <tfoot><tr><td class="fw6">Total</td><td class="mn fw6">${total.toLocaleString()}</td><td class="mn fw6">100%</td><td class="mn fw6">100%</td><td></td></tr></tfoot>
+    </table></div>
+  </div>`;
+  animateBars();
+}
+
+/* ── VISUALISE ───────────────────────────────────── */
+function popViz(){
+  const x=document.getElementById('vx'),y=document.getElementById('vy');if(!x||!y)return;
+  const o=S.headers.map(h=>`<option>${h}</option>`).join('');
+  x.innerHTML=o;y.innerHTML=o;
+  const nc=S.headers.filter(h=>S.types[h]==='numeric');
+  if(nc.length)y.value=nc[0];
+}
+function setCT(t){S.vizType=t;document.querySelectorAll('.ctbtn').forEach(b=>b.classList.toggle('active',b.dataset.t===t));}
+
+function buildChart(){
+  const el=document.getElementById('vizOut');
+  if(!S.rows.length){el.innerHTML=noData();return;}
+  const xCol=document.getElementById('vx').value,yCol=document.getElementById('vy').value;
+  const agg=document.getElementById('vagg').value,title=document.getElementById('vtitle').value||(yCol+' by '+xCol);
+  const type=S.vizType;let chartData;
+
+  if(type==='histogram'){
+    const vs=S.rows.map(r=>parseFloat(r[yCol])).filter(v=>!isNaN(v));
+    const mn=Math.min(...vs),mx=Math.max(...vs),bins=10,step=(mx-mn)/bins;
+    const bk=Array(bins).fill(0);vs.forEach(v=>{const i=Math.min(Math.floor((v-mn)/step),bins-1);bk[i]++;});
+    chartData={labels:Array(bins).fill(0).map((_,i)=>ff(mn+i*step,1)+'–'+ff(mn+(i+1)*step,1)),datasets:[{label:yCol,data:bk,backgroundColor:COLORS[0]+'BB',borderRadius:3}]};
+  } else if(type==='scatter'){
+    const pts=S.rows.map(r=>({x:parseFloat(r[xCol]),y:parseFloat(r[yCol])})).filter(p=>!isNaN(p.x)&&!isNaN(p.y));
+    chartData={datasets:[{label:title,data:pts,backgroundColor:COLORS[0]+'99',pointRadius:5}]};
+  } else {
+    const grp={};S.rows.forEach(r=>{const k=r[xCol]||'?',v=parseFloat(r[yCol]);if(!grp[k])grp[k]=[];if(!isNaN(v))grp[k].push(v);});
+    const ent=Object.entries(grp).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))).slice(0,30);
+    const af=(vs,m)=>{if(!vs.length)return 0;if(m==='sum')return vs.reduce((a,b)=>a+b,0);if(m==='mean')return vs.reduce((a,b)=>a+b,0)/vs.length;if(m==='count')return vs.length;if(m==='max')return Math.max(...vs);return Math.min(...vs);};
+    const isPie=type==='pie'||type==='doughnut';
+    chartData={labels:ent.map(e=>e[0]),datasets:[{label:title,data:ent.map(e=>+af(e[1],agg).toFixed(2)),backgroundColor:isPie?COLORS.slice(0,ent.length).map(c=>c+'DD'):COLORS[0]+'BB',borderColor:isPie?'transparent':COLORS[0],borderRadius:type==='bar'?4:0,fill:false,tension:.35,pointRadius:type==='line'?3:0,borderWidth:type==='line'?2:0}]};
+  }
+
+  el.innerHTML=`<div class="card"><p class="ct">${title}</p><div style="position:relative;height:360px"><canvas id="vc" role="img" aria-label="${title}">${title}</canvas></div></div>`;
+  setTimeout(()=>{
+    dC('vc');const ctx=document.getElementById('vc');if(!ctx)return;
+    const isPie=type==='pie'||type==='doughnut';
+    S.charts['vc']=new Chart(ctx,{
+      type:type==='histogram'?'bar':type,data:chartData,
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:isPie?'right':'top',labels:{boxWidth:12,font:{family:'IBM Plex Sans',size:12}}},title:{display:true,text:title,font:{family:'IBM Plex Sans',size:14,weight:'600'},color:'#0F172A',padding:{bottom:12}}},
+        scales:isPie||type==='scatter'?{}:{x:{grid:{display:false},ticks:{font:{size:11,family:'IBM Plex Mono'},maxRotation:45}},y:{grid:{color:'#F1F5F9'},ticks:{font:{size:11,family:'IBM Plex Mono'},callback:v=>v.toLocaleString()}}}}
+    });
+  },60);
+}
+function saveVC(){const c=document.getElementById('vc');if(!c)return;const a=document.createElement('a');a.download='decisionline-chart.png';a.href=c.toDataURL();a.click();}
+
+/* ── DASHBOARD ──────────────────────────────────── */
+function buildDash(){
+  const el=document.getElementById('dashOut');
+  if(!S.rows.length){el.innerHTML=noData();return;}
+  const nc=S.headers.filter(h=>S.types[h]==='numeric');
+  const cc=S.headers.filter(h=>S.types[h]==='categorical');
+  const n=S.rows.length;
+  const s0=nc[0]?cs(nc[0]):null;
+
+  let html=`<div class="g4 mb16">
+    <div class="met"><div class="ml">Total Records</div><div class="mv">${n.toLocaleString()}</div></div>
+    <div class="met gn"><div class="ml">Columns</div><div class="mv">${S.headers.length}</div><div class="ms">${nc.length} numeric · ${cc.length} categorical</div></div>
+    ${s0?`<div class="met am"><div class="ml">${nc[0]} Mean</div><div class="mv">${ff(s0.mean)}</div><div class="ms">SD ± ${ff(s0.sd)}</div></div>
+    <div class="met pu"><div class="ml">${nc[0]} Median</div><div class="mv">${ff(s0.median)}</div><div class="ms">IQR ${ff(s0.q1)}–${ff(s0.q3)}</div></div>`:''}
+  </div>`;
+
+  const panels=[];
+  if(cc[0]&&nc[0])panels.push({id:'d0',type:'bar',xC:cc[0],yC:nc[0],title:nc[0]+' by '+cc[0]});
+  if(cc[1]&&nc[0])panels.push({id:'d1',type:'bar',xC:cc[1],yC:nc[0],title:nc[0]+' by '+cc[1]});
+  if(cc[0])panels.push({id:'d2',type:'doughnut',xC:cc[0],yC:nc[0],title:'Distribution: '+cc[0]});
+  if(cc[0]&&nc[1])panels.push({id:'d3',type:'bar',xC:cc[0],yC:nc[1],title:nc[1]+' by '+cc[0]});
+
+  html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+    ${panels.map(p=>`<div class="card" style="margin:0"><p class="ct" style="font-size:13px">${p.title}</p><div style="position:relative;height:240px"><canvas id="${p.id}" role="img" aria-label="${p.title}"></canvas></div></div>`).join('')}
+  </div>`;
+
+  el.innerHTML=html;
+  setTimeout(()=>{
+    panels.forEach(p=>{
+      const isPie=p.type==='pie'||p.type==='doughnut';
+      let labels=[],data=[];
+      if(p.xC&&p.yC){
+        const g={};S.rows.forEach(r=>{const k=r[p.xC]||'?',v=parseFloat(r[p.yC]);if(!g[k])g[k]=[];if(!isNaN(v))g[k].push(v);});
+        const e=Object.entries(g).sort((a,b)=>b[1].reduce((s,v)=>s+v,0)-a[1].reduce((s,v)=>s+v,0)).slice(0,12);
+        labels=e.map(x=>x[0]);data=e.map(x=>+(x[1].reduce((s,v)=>s+v,0)/x[1].length).toFixed(2));
+      } else if(p.xC){
+        const f={};S.rows.forEach(r=>{const k=r[p.xC]||'?';f[k]=(f[k]||0)+1;});
+        const e=Object.entries(f).sort((a,b)=>b[1]-a[1]).slice(0,10);labels=e.map(x=>x[0]);data=e.map(x=>x[1]);
+      }
+      dC(p.id);const ctx=document.getElementById(p.id);if(!ctx||!labels.length)return;
+      S.charts[p.id]=new Chart(ctx,{type:p.type,data:{labels,datasets:[{label:p.title,data,backgroundColor:isPie?COLORS.slice(0,labels.length).map(c=>c+'DD'):COLORS[0]+'BB',borderRadius:p.type==='bar'?4:0,borderWidth:0,fill:false,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:isPie?'right':'top',labels:{boxWidth:10,font:{size:11}}}},scales:isPie?{}:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:40}},y:{grid:{color:'#F1F5F9'},ticks:{font:{size:10},callback:v=>v.toLocaleString()}}}}});
+    });
+  },80);
+}
+
+/* ── AI INSIGHTS ────────────────────────────────── */
+function renderAI(){
+  const el=document.getElementById('aiOut');
+  if(!S.rows.length){el.innerHTML=noData();return;}
+  el.innerHTML=`
+    ${!S.apiKey?'<div class="hint wn">⚠️ Add your <strong>Anthropic API key</strong> (🔑 AI Key button above) to enable AI-powered analysis.</div>':''}
+    <div class="card">
+      <p class="ct">🤖 Ask Claude About Your Data</p>
+      <div class="fg"><label class="fl">Your question or task</label>
+      <textarea class="fi" id="aiq" rows="3" placeholder="e.g. What are the key trends? Which groups need priority attention? Are there anomalies or outliers to investigate?"></textarea></div>
+      <div class="ai-pills">
+        <span class="ap" onclick="fillAI('Summarise the key trends and patterns in this dataset')">Summarise trends</span>
+        <span class="ap" onclick="fillAI('Identify anomalies, outliers, and data quality concerns')">Find anomalies</span>
+        <span class="ap" onclick="fillAI('Generate evidence-based public health recommendations from this data')">Recommendations</span>
+        <span class="ap" onclick="fillAI('Which groups or areas need the most urgent attention and why?')">Priority groups</span>
+        <span class="ap" onclick="fillAI('Compare the highest and lowest values and suggest possible explanations')">Compare extremes</span>
+      </div>
+      <div class="brow"><button class="btn bp" onclick="askAI()">Ask Claude ↗</button></div>
+    </div>
+    <div id="ar"></div>`;
+}
+
+function fillAI(t){const e=document.getElementById('aiq');if(e)e.value=t;}
+
+async function askAI(){
+  const q=(document.getElementById('aiq')||{}).value?.trim();
+  if(!q)return;
+  if(!S.apiKey){toast('Add API key first','er');openOv('apiOv');return;}
+  document.getElementById('ar').innerHTML=spinner();
+  const nc=S.headers.filter(h=>S.types[h]==='numeric');
+  const ss=nc.slice(0,6).map(h=>{const s=cs(h);return s?`${h}: n=${s.n}, mean=${ff(s.mean)}, median=${ff(s.median)}, SD=${ff(s.sd)}, min=${ff(s.min)}, max=${ff(s.max)}, CV=${ff(s.cv,1)}%`:null;}).filter(Boolean).join('\n');
+  const smp=S.rows.slice(0,5).map(r=>S.headers.map(h=>r[h]).join(', ')).join('\n');
+  const ctx=`You are a senior public health data analyst. Dataset:\n- Rows: ${S.rows.length}, Columns: ${S.headers.join(', ')}\n- Column types: ${JSON.stringify(S.types)}\n\nKey statistics:\n${ss}\n\nSample rows:\n${smp}\n\nQuestion: ${q}\n\nProvide a concise, evidence-based analysis with specific numbers. Use bullet points. Focus on actionable public health insights.`;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:ctx}]})});
+    const d=await r.json();if(d.error)throw new Error(d.error.message);
+    document.getElementById('ar').innerHTML=`<div class="card"><p class="ct">🤖 Claude's Analysis</p><div class="ai-out">${d.content[0].text}</div><div class="brow mt16"><button class="btn bo bsm" onclick="navigator.clipboard.writeText(document.querySelector('.ai-out').textContent).then(()=>toast('Copied','ok'))">📋 Copy</button></div></div>`;
+  }catch(e){document.getElementById('ar').innerHTML=hint('❌ '+e.message+'. Check your API key.','er');}
+}
+
+/* ── NAV ─────────────────────────────────────────── */
+/* ── NAV ─────────────────────────────────────── */
+function go(tab){
+  document.querySelectorAll('.tab-panel').forEach(p=>{
+    p.classList.remove('active');
+    p.classList.remove('gis-active');
+    p.style.display='';
+  });
+  document.querySelectorAll('.nav-it').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.bnav-it').forEach(n=>n.classList.remove('active'));
+  const panel=document.getElementById('tp-'+tab);
+  if(tab==='gis') panel.classList.add('gis-active');
+  panel.classList.add('active');
+  document.getElementById('ni-'+tab).classList.add('active');
+  var bn=document.getElementById('bn-'+tab);
+  if(bn) bn.classList.add('active');
+  const main=document.querySelector('.main');
+  main.style.overflow=(tab==='gis')?'hidden':'auto';
+  main.style.padding=(tab==='gis')?'0':'';
+  closeSB();
+  if(tab==='data'){openDPage();return;}
+  document.getElementById('dpage').style.display='none';
+  if(tab==='explore')renderExplore();
+  if(tab==='stats'){setST('desc');}
+  if(tab==='dash')buildDash();
+  if(tab==='ai')renderAI();
+  if(tab==='viz')popViz();
+  if(tab==='gis')initGIS();
+}
+
+/* ── UTILS ───────────────────────────────────────── */
+function setBadge(on,lbl){const e=document.getElementById('cbadge');e.className='cbadge '+(on?'on':'off');e.innerHTML=`<span class="cdot"></span>${lbl}`;}
+function toast(msg,type='ok'){const t=document.getElementById('toast');t.className='toast '+type;t.innerHTML=(type==='ok'?'✅':'❌')+' '+msg;void t.offsetWidth;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);}
+function hint(m,t=''){return`<div class="hint ${t}">${m}</div>`;}
+function spinner(){return'<div class="loading"><div class="spin"></div><span>Loading…</span></div>';}
+function noData(){return`<div class="empty"><div class="ei">📥</div><p class="et">No data loaded</p><p class="ed"><a href="#" onclick="go('data');return false">Load a dataset</a> to get started</p></div>`;}
+function dC(id){if(S.charts[id]){S.charts[id].destroy();delete S.charts[id];}}
+function openOv(id){document.getElementById(id).classList.add('open');}
+function closeOv(id){document.getElementById(id).classList.remove('open');}
+function saveKey(){const k=document.getElementById('akin').value.trim();S.apiKey=k;localStorage.setItem('dl_key',k);closeOv('apiOv');toast('API key saved','ok');}
+function downloadCSV(){if(!S.rows.length)return;const csv=S.headers.join(',')+'\n'+S.rows.map(r=>S.headers.map(h=>`"${String(r[h]).replace(/"/g,'""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='decisionline-data.csv';a.click();toast('CSV downloaded','ok');}
+
+
+/* ── DATA PAGE ──────────────────────────────────── */
+function openDPage(){
+  document.getElementById('dpage').style.display='flex';
+  document.getElementById('dpBack').style.display=S.rows.length?'flex':'none';
+  // reset tab highlight
+  document.querySelectorAll('.nav-it').forEach(n=>n.classList.remove('active'));
+  document.getElementById('ni-data').classList.add('active');
+}
+function closeDPage(){
+  document.getElementById('dpage').style.display='none';
+  if(S.rows.length)go('explore');
+}
+function dpSel(m){
+  ['paste','url','wb','who'].forEach(x=>{
+    document.getElementById('dpc-'+x).classList.toggle('sel',x===m);
+    document.getElementById('dpn-'+x).style.display=x===m?'block':'none';
+  });
+  setTimeout(()=>{ const el=document.getElementById('dpn-'+m); if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'}); },80);
+}
+function dpDone(){
+  setBadge(true,S.rows.length.toLocaleString()+' rows · '+S.headers.length+' cols');
+  popViz();
+  toast('Data loaded — '+S.rows.length+' rows, '+S.headers.length+' columns','ok');
+  setTimeout(()=>{ closeDPage(); },900);
+}
+function dpParse(){
+  const raw=document.getElementById('dp-pa').value.trim();
+  const del=document.getElementById('dp-pd').value;
+  const el=document.getElementById('dp-pr');
+  if(!raw){el.innerHTML=dpH('Nothing pasted','er');return;}
+  try{ loadCSV(raw,del==='auto'?detectDelim(raw):del); el.innerHTML=dpH('✅ Loaded '+S.rows.length+' rows × '+S.headers.length+' columns','ok'); dpDone(); }
+  catch(e){el.innerHTML=dpH('❌ '+e.message,'er');}
+}
+function dpSample(){
+  document.getElementById('dp-pa').value=`District,Period,Indicator,Value,Target,Sex
+Zomba,2023Q1,Malaria Cases,4521,5000,Both
+Blantyre,2023Q1,Malaria Cases,3812,4500,Both
+Lilongwe,2023Q1,Malaria Cases,6104,6000,Both
+Mzuzu,2023Q1,Malaria Cases,1187,1500,Both
+Kasungu,2023Q1,Malaria Cases,2744,3000,Both
+Mangochi,2023Q1,Malaria Cases,7032,6500,Both
+Zomba,2023Q1,ANC 1st Visit,2734,3000,Female
+Blantyre,2023Q1,ANC 1st Visit,3021,3200,Female
+Lilongwe,2023Q1,ANC 1st Visit,4987,5100,Female
+Zomba,2023Q1,HIV Tests,1143,1500,Both
+Blantyre,2023Q1,HIV Tests,1987,2000,Both
+Lilongwe,2023Q1,HIV Tests,3201,3500,Both
+Zomba,2023Q1,Deliveries,1755,1900,Female
+Blantyre,2023Q1,Deliveries,2340,2400,Female
+Lilongwe,2023Q1,Deliveries,3801,3800,Female
+Mzuzu,2023Q1,Deliveries,855,1000,Female`;
+  dpSel('paste');
+}
+async function dpURL(){
+  const url=document.getElementById('dp-ui').value.trim();
+  const el=document.getElementById('dp-ur');
+  if(!url){el.innerHTML=dpH('Enter a URL','er');return;}
+  el.innerHTML=spinner();
+  try{ const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(url)); if(!r.ok)throw new Error('HTTP '+r.status); const txt=await r.text(); loadCSV(txt,detectDelim(txt)); el.innerHTML=dpH('✅ Loaded '+S.rows.length+' rows','ok'); dpDone(); }
+  catch(e){el.innerHTML=dpH('❌ '+e.message+'. Try downloading and using Paste instead.','er');}
+}
+async function dpWB(){
+  const country=document.getElementById('dp-wc').value.trim()||'MW';
+  const indicator=document.getElementById('dp-wi').value;
+  const years=document.getElementById('dp-wy').value;
+  const el=document.getElementById('dp-wr');
+  el.innerHTML=spinner();
+  try{
+    const r=await fetch(`https://api.worldbank.org/v2/country/${country}/indicator/${indicator}?format=json&mrv=${years}&per_page=${years}`);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const data=await r.json(); const arr=(data[1]||[]).filter(d=>d.value!==null);
+    if(!arr.length)throw new Error('No data returned — try a different country or indicator');
+    S.headers=['Country','CountryCode','Indicator','Year','Value'];
+    S.rows=arr.map(d=>({Country:d.country?.value||country,CountryCode:d.countryiso3code||country,Indicator:d.indicator?.value||indicator,Year:d.date,Value:d.value}));
+    S.types=detectTypes(); el.innerHTML=dpH('✅ Loaded '+S.rows.length+' records from World Bank','ok'); dpDone();
+  }catch(e){el.innerHTML=dpH('❌ '+e.message,'er');}
+}
+async function dpWHO(){
+  const ind=document.getElementById('dp-whi').value;
+  const country=document.getElementById('dp-whc').value.trim();
+  const el=document.getElementById('dp-hr');
+  el.innerHTML=spinner();
+  try{
+    let url=`https://ghoapi.azureedge.net/api/${ind}?$top=300`;
+    if(country)url+=`&$filter=SpatialDim eq '${country}'`;
+    const r=await fetch(url); if(!r.ok)throw new Error('HTTP '+r.status);
+    const data=await r.json(); const arr=(data.value||[]).filter(d=>d.NumericValue!=null);
+    if(!arr.length)throw new Error('No numeric data — try leaving country blank for global data');
+    S.headers=['Country','Year','Sex','Indicator','Value','Low','High'];
+    S.rows=arr.map(d=>({Country:d.SpatialDim||'',Year:String(d.TimeDim||''),Sex:d.Dim1||'Both sexes',Indicator:ind,Value:d.NumericValue,Low:d.Low||'',High:d.High||''}));
+    S.types=detectTypes(); el.innerHTML=dpH('✅ Loaded '+S.rows.length+' records from WHO GHO','ok'); dpDone();
+  }catch(e){el.innerHTML=dpH('❌ '+e.message,'er');}
+}
+function dpH(m,t=''){
+  return`<div class="hint ${t==='ok'?'ok':t==='er'?'er':t==='wn'?'wn':''}">${m}</div>`;
+}
+
+/* ══════════════════════════════════════════════
+   ANIMATION HELPERS
+══════════════════════════════════════════════ */
+// Animate all .fb bars to their target width after insertion
+function animateBars(){
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('.fb[data-w]').forEach(b=>{
+      b.style.width='0';
+      requestAnimationFrame(()=>{setTimeout(()=>{b.style.width=b.dataset.w;},20);});
+    });
+    // Animate .pb progress bars
+    document.querySelectorAll('.pb[data-w]').forEach(b=>{
+      b.style.width='0';
+      requestAnimationFrame(()=>{setTimeout(()=>{b.style.width=b.dataset.w;},20);});
+    });
+  });
+}
+
+// Animate numeric metric values counting up
+function animateCounters(){
+  document.querySelectorAll('.mv[data-val]').forEach(el=>{
+    const raw=el.dataset.val;
+    const num=parseFloat(raw.replace(/[^0-9.-]/g,''));
+    if(isNaN(num)){el.textContent=raw;return;}
+    const prefix=raw.match(/^[^0-9-]*/)[0];
+    const suffix=raw.match(/[^0-9.]*$/)[0];
+    const dur=900,steps=40,inc=num/steps;
+    let cur=0,i=0;
+    const t=setInterval(()=>{
+      cur=Math.min(cur+inc,num);i++;
+      el.textContent=prefix+(Number.isInteger(num)?Math.round(cur).toLocaleString():cur.toFixed(2).toLocaleString())+suffix;
+      if(i>=steps){el.textContent=prefix+(Number.isInteger(num)?num.toLocaleString():num.toFixed(2))+suffix;clearInterval(t);}
+    },dur/steps);
+  });
+}
+let GIS={map:null,layers:{},markers:[],heatData:[],tileLayer:null,colCol:'',geocodeCache:{}};
+
+const GIS_TILES={
+  osm:{url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',attr:'© OpenStreetMap contributors'},
+  sat:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',attr:'© Esri'},
+  dark:{url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',attr:'© CARTO'},
+  topo:{url:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',attr:'© OpenTopoMap'}
+};
+
+const GIS_COLORS=['#38BDF8','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#14B8A6','#F97316','#06B6D4','#84CC16'];
+
+function initGIS(){
+  if(GIS.map){GIS.map.invalidateSize();return;}
+  const el=document.getElementById('gis-map');
+  GIS.map=L.map(el,{zoomControl:true,attributionControl:true}).setView([0,20],3);
+  gisSetLayer('osm');
+  // Add scale control
+  L.control.scale({imperial:false,position:'bottomright'}).addTo(GIS.map);
+  // Populate colour column selector
+  gisPopColSel();
+  // If data already loaded, offer to auto-plot
+  if(S.rows.length) gisAutoDetect();
+  // Reactive update when S changes: watch via MutationObserver on badge
+  const badge=document.getElementById('cbadge');
+  if(badge && !badge._gisObserving){
+    badge._gisObserving=true;
+    new MutationObserver(()=>{if(document.getElementById('tp-gis').classList.contains('active')){gisPopColSel();gisAutoDetect();}}).observe(badge,{childList:true,characterData:true,subtree:true});
+  }
+}
+
+function gisSetLayer(key){
+  if(GIS.tileLayer)GIS.map.removeLayer(GIS.tileLayer);
+  const t=GIS_TILES[key]||GIS_TILES.osm;
+  GIS.tileLayer=L.tileLayer(t.url,{attribution:t.attr,maxZoom:19}).addTo(GIS.map);
+  document.getElementById('gis-layer').value=key;
+}
+
+function gisPopColSel(){
+  const sel=document.getElementById('gis-col');
+  const prev=sel.value;
+  sel.innerHTML='<option value="">— Colour by column —</option>';
+  (S.headers||[]).forEach(h=>{const o=document.createElement('option');o.value=h;o.textContent=h;sel.appendChild(o);});
+  if(prev)sel.value=prev;
+}
+
+function gisColorCol(col){GIS.colCol=col;if(GIS.markers.length)gisPlotData();}
+
+/* Auto-detect columns that might be location */
+function gisAutoDetect(){
+  if(!S.rows.length)return;
+  const locKeys=['country','region','district','area','location','province','zone','division','ward','village','site','facility'];
+  const found=S.headers.find(h=>locKeys.some(k=>h.toLowerCase().includes(k)));
+  if(found){document.getElementById('gis-status').textContent='📍 Location column detected: "'+found+'" — click Plot My Data';}
+  gisPopColSel();
+}
+
+/* Geocode via Nominatim with cache */
+async function geocode(name){
+  if(!name||!name.trim())return null;
+  const key=name.trim().toLowerCase();
+  if(GIS.geocodeCache[key])return GIS.geocodeCache[key];
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=json&limit=1`,{headers:{'Accept-Language':'en'}});
+    const d=await r.json();
+    if(d&&d[0]){const res={lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),display:d[0].display_name};GIS.geocodeCache[key]=res;return res;}
+  }catch(e){}
+  return null;
+}
+
+/* Plot data rows onto map */
+async function gisPlotData(){
+  if(!S.rows.length){toast('Load data first','er');return;}
+  gisClear(false);
+  const locKeys=['country','region','district','area','location','province','zone','division','ward','village','site','facility','place','name'];
+  const latKeys=['lat','latitude','y'];
+  const lngKeys=['lon','lng','longitude','long','x'];
+  const latCol=S.headers.find(h=>latKeys.includes(h.toLowerCase()));
+  const lngCol=S.headers.find(h=>lngKeys.includes(h.toLowerCase()));
+  const locCol=S.headers.find(h=>locKeys.some(k=>h.toLowerCase().includes(k)));
+  const colBy=GIS.colCol;
+  const colorMap={};let colorIdx=0;
+  const getColor=v=>{if(!v||!colBy)return'#38BDF8';if(!colorMap[v])colorMap[v]=GIS_COLORS[colorIdx++%GIS_COLORS.length];return colorMap[v];};
+
+  const status=document.getElementById('gis-status');
+  status.textContent='Geocoding…';
+  let plotted=0;const total=S.rows.length;const bounds=[];
+
+  // Batch geocode unique location names first
+  let uniqueLocs=[];
+  if(!latCol&&locCol){
+    uniqueLocs=[...new Set(S.rows.map(r=>String(r[locCol]||'')).filter(Boolean))];
+    status.textContent=`Geocoding ${uniqueLocs.length} locations…`;
+    for(let i=0;i<uniqueLocs.length;i++){
+      await geocode(uniqueLocs[i]);
+      status.textContent=`Geocoding ${i+1}/${uniqueLocs.length}…`;
+    }
+  }
+
+  for(const row of S.rows){
+    let lat=null,lng=null;
+    if(latCol&&lngCol){lat=parseFloat(row[latCol]);lng=parseFloat(row[lngCol]);}
+    else if(locCol){const g=GIS.geocodeCache[String(row[locCol]||'').trim().toLowerCase()];if(g){lat=g.lat;lng=g.lng;}}
+    if(!lat||!lng||isNaN(lat)||isNaN(lng))continue;
+
+    const color=getColor(colBy?row[colBy]:'');
+    const popupRows=S.headers.map(h=>`<tr><td style="color:#94A3B8;padding:2px 8px 2px 0;font-size:11px;">${h}</td><td style="font-weight:600;font-size:11px;">${row[h]??''}</td></tr>`).join('');
+    const popup=`<div style="font-family:'IBM Plex Sans',sans-serif;min-width:180px;"><table>${popupRows}</table></div>`;
+
+    // Glowing circle marker
+    const marker=L.circleMarker([lat,lng],{
+      radius:8,fillColor:color,color:'#fff',weight:1.5,
+      fillOpacity:0.85,opacity:1
+    }).addTo(GIS.map).bindPopup(popup,{maxWidth:280});
+
+    // Pulse animation via CSS class on path element
+    marker.on('add',()=>{
+      const el=marker.getElement();
+      if(el)el.style.filter=`drop-shadow(0 0 6px ${color})`;
+    });
+
+    GIS.markers.push(marker);
+    bounds.push([lat,lng]);
+    plotted++;
+  }
+
+  if(bounds.length)GIS.map.fitBounds(bounds,{padding:[30,30],maxZoom:10});
+  document.getElementById('gis-counter').style.display='flex';
+  document.getElementById('gis-count-n').textContent=plotted;
+
+  // Build legend
+  if(colBy&&Object.keys(colorMap).length){
+    const leg=document.getElementById('gis-legend');
+    leg.style.display='block';
+    document.getElementById('gis-legend-items').innerHTML=Object.entries(colorMap).map(([v,c])=>`<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;"><span style="width:12px;height:12px;border-radius:50%;background:${c};display:inline-block;box-shadow:0 0 6px ${c};flex-shrink:0;"></span><span style="color:#E2E8F0;">${v}</span></div>`).join('');
+  }
+
+  status.textContent=plotted?`✅ ${plotted} of ${total} rows plotted`:`⚠️ No plottable rows found. Add lat/lng columns or a named location column.`;
+  if(!plotted)toast('No coordinates found. Add Lat/Lng columns or a column named district/country/region.','er');
+}
+
+/* Search & fly to location */
+async function gisSearch(val){
+  if(val.length<3)return;
+  clearTimeout(GIS._st);
+  GIS._st=setTimeout(async()=>{
+    const g=await geocode(val);
+    if(g){GIS.map.flyTo([g.lat,g.lng],8,{animate:true,duration:1.4});
+      const mk=L.marker([g.lat,g.lng],{icon:L.divIcon({className:'',html:`<div style="background:#38BDF8;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 10px #38BDF8;"></div>`,iconSize:[14,14],iconAnchor:[7,7]})}).addTo(GIS.map).bindPopup(`<b>${g.display}</b>`).openPopup();
+      setTimeout(()=>GIS.map.removeLayer(mk),8000);
+    }
+  },600);
+}
+
+function gisClear(resetStatus=true){
+  GIS.markers.forEach(m=>GIS.map.removeLayer(m));
+  GIS.markers=[];
+  document.getElementById('gis-legend').style.display='none';
+  document.getElementById('gis-counter').style.display='none';
+  if(resetStatus)document.getElementById('gis-status').textContent='';
+}
+
+document.addEventListener('DOMContentLoaded',()=>{if(S.apiKey)document.getElementById('akin').value=S.apiKey;
+  // show data page on first load
+  openDPage();
+});
+</script>
+
+<!-- MOBILE BOTTOM NAVIGATION -->
+<nav class="bottomnav" id="bottomnav">
+  <div class="bnav-it active" id="bn-data"    onclick="go('data')">   <span class="bnav-icon">📥</span><span class="bnav-label">Data</span></div>
+  <div class="bnav-it"        id="bn-explore" onclick="go('explore')"><span class="bnav-icon">🔍</span><span class="bnav-label">Explore</span></div>
+  <div class="bnav-it"        id="bn-stats"   onclick="go('stats')">  <span class="bnav-icon">📐</span><span class="bnav-label">Stats</span></div>
+  <div class="bnav-it"        id="bn-viz"     onclick="go('viz')">    <span class="bnav-icon">📈</span><span class="bnav-label">Charts</span></div>
+  <div class="bnav-it"        id="bn-dash"    onclick="go('dash')">   <span class="bnav-icon">🗂️</span><span class="bnav-label">Dash</span></div>
+  <div class="bnav-it"        id="bn-ai"      onclick="go('ai')">     <span class="bnav-icon">🤖</span><span class="bnav-label">AI</span></div>
+  <div class="bnav-it"        id="bn-gis"     onclick="go('gis')">    <span class="bnav-icon">🗺️</span><span class="bnav-label">Map</span></div>
+</nav>
+</body>
+</html>
